@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCOUNDREL — a knavish roguelike</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🃏</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="bg"><div class="swirl"></div><div class="vignette"></div></div>
+<canvas id="fx"></canvas>
+
+<div id="app">
+
+  <!-- ============ MENU ============ -->
+  <section id="screen-menu" class="screen">
+    <div class="title-wrap">
+      <div class="title-cards">
+        <div class="tcard tc1">A♠</div><div class="tcard tc2">🃏</div><div class="tcard tc3">K♥</div>
+      </div>
+      <h1 class="game-title">SCOUNDREL</h1>
+      <p class="tagline">a knavish card-crawling roguelike</p>
+    </div>
+    <div id="campaign-row"></div>
+    <div class="menu-foot">
+      <button class="btn btn-ghost" id="btn-howto">HOW TO PLAY</button>
+      <span id="menu-stats" class="menu-stats"></span>
+    </div>
+    <p class="credit">Based on <b>Scoundrel</b> by Zach Gage &amp; Kurt Bieg — an unofficial fan tribute</p>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="screen">
+    <aside id="sidebar">
+      <div class="side-block" id="floor-info">
+        <div class="floor-label" id="floor-label">ACT I · FLOOR 1</div>
+        <div class="floor-mod" id="floor-mod"></div>
+      </div>
+      <div class="side-block hp-block">
+        <div class="hp-orb" id="hp-orb"><span id="hp-heart"></span><span id="hp-num">20</span><span class="hp-max" id="hp-max">/20</span></div>
+        <div class="shield-chip" id="shield-chip">🛡 <span id="shield-num">0</span></div>
+      </div>
+      <div class="side-block gold-block">
+        <div class="gold-chip">🪙 <span id="gold-num">0</span></div>
+      </div>
+      <button class="btn btn-flee" id="btn-flee">🏃 FLEE ROOM</button>
+      <div class="side-foot">
+        <button class="iconbtn" id="btn-howto2" title="How to play">?</button>
+        <button class="iconbtn" id="btn-mute" title="Sound on/off">🔊</button>
+        <button class="iconbtn" id="btn-fullscreen" title="Fullscreen">⛶</button>
+        <button class="iconbtn" id="btn-abandon" title="Abandon run">✖</button>
+      </div>
+    </aside>
+
+    <main id="table">
+      <div id="jokerbar"></div>
+      <div id="bossbar" class="hidden"></div>
+      <div id="room-wrap">
+        <div id="room-banner"></div>
+        <div id="dungeon-row">
+          <div class="pile" id="deck-pile" title="The Dungeon — click to peek at what remains">
+            <div class="pile-stack">
+              <div class="card-back pb3"></div>
+              <div class="card-back pb2"></div>
+              <div class="card-back pb1"></div>
+            </div>
+            <div class="pile-label">DUNGEON</div>
+            <div class="pile-count" id="deck-num">44</div>
+          </div>
+          <div id="room"></div>
+          <div class="pile" id="discard-pile" title="Discard — click to browse">
+            <div class="pile-cards" id="discard-top"><div class="pile-empty"></div></div>
+            <div class="pile-label">DISCARD</div>
+            <div class="pile-count" id="discard-num">0</div>
+          </div>
+        </div>
+        <div id="weapon-row">
+          <div class="pile-label">WEAPON IN PLAY</div>
+          <div id="weapon-slot"><div class="weapon-empty">bare hands<br>(full damage)</div></div>
+          <div id="weapon-info" class="weapon-info"></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============ SHOP ============ -->
+  <section id="screen-shop" class="screen">
+    <div class="shop-head">
+      <h2>🏕 THE SMUGGLER'S CAMP</h2>
+      <div class="gold-chip big">🪙 <span id="shop-gold">0</span></div>
+    </div>
+    <div id="shop-jokerbar"></div>
+    <div id="shop-items"></div>
+    <div id="shop-services"></div>
+    <div class="shop-foot">
+      <button class="btn btn-big btn-go" id="btn-delve">DELVE DEEPER →</button>
+    </div>
+  </section>
+
+  <!-- ============ GAME OVER ============ -->
+  <section id="screen-over" class="screen">
+    <h1 id="over-title" class="game-title">SLAIN</h1>
+    <p id="over-sub" class="tagline"></p>
+    <div id="over-stats" class="over-stats"></div>
+    <button class="btn btn-big btn-go" id="btn-again">NEW RUN</button>
+  </section>
+
+</div>
+
+<!-- modal + floaters -->
+<div id="modal-wrap" class="hidden"><div id="modal"></div></div>
+<div id="floaters"></div>
+<div id="tooltip" class="hidden"></div>
+
+<script src="js/pixel.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

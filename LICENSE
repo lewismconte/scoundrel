@@ -1,0 +1,32 @@
+MIT License
+
+Copyright (c) 2026 Lewis Conte
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+This game is an original, independent implementation. It is based on the rules
+of "Scoundrel", a solo card game designed by Zach Gage & Kurt Bieg (2011).
+Game rules and mechanics are not covered by copyright; this project contains no
+text, artwork, or code from the original rules document. "Scoundrel" and
+"Balatro" are the property of their respective creators. This is an unofficial,
+non-commercial fan adaptation and is not affiliated with or endorsed by them.
+
+The MIT license above applies only to this project's own source code.
