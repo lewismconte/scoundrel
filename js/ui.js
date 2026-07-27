@@ -892,10 +892,11 @@ const UI = (() => {
 
   /* ============================ shop ============================ */
   function renderShop() {
+    if (!S.shop) return; // left the camp before a deferred redraw landed
     const free = S.shop.freePicks > 0;
     document.querySelector('#screen-shop .shop-head h2').textContent =
       S.shop.outfitting ? (free ? 'OUTFITTING - FIRST PICK IS FREE' : 'OUTFITTING') : "THE SMUGGLER'S CAMP";
-    $('#btn-delve').textContent = S.shop.outfitting ? 'ENTER THE DUNGEON &gt;&gt;' : 'DELVE DEEPER &gt;&gt;';
+    $('#btn-delve').innerHTML = S.shop.outfitting ? 'ENTER THE DUNGEON &gt;&gt;' : 'DELVE DEEPER &gt;&gt;';
     $('#shop-gold').textContent = S.gold;
     renderJokers($('#shop-jokerbar'), true);
 

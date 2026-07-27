@@ -672,6 +672,7 @@ const E = (() => {
   }
 
   function leaveShop() {
+    if (!S.shop) return; // already left (double-click) — never advance twice
     S.shop = null;
     if (S.floorNum === 0) { startFloor(); return; } // leaving the outfitting camp → floor 1
     if (S.stage === 0) { S.stage = 1; startFloor(); }
