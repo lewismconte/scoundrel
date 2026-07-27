@@ -110,7 +110,7 @@ const E = (() => {
 
   /* ---------- derived values ---------- */
   function monsterBonus() {
-    let b = S.campaign.monsterBonus + (S.act >= 3 ? 1 : 0);
+    let b = (S.campaign.monsterBonus || 0) + (S.act >= 3 ? 1 : 0);
     if (S.floorMod === 'bloodmoon') b += 1;
     return b;
   }
@@ -150,16 +150,16 @@ const E = (() => {
   /* ============================================================
      RUN LIFECYCLE
      ============================================================ */
-  function newRun(campId) {
-    const camp = DATA.campaignById(campId);
+  function newRun() {
     Object.assign(S, {
       mode: 'gauntlet',
-      campaign: camp,
+      campaign: { name: 'The Gauntlet' },
       act: 1, stage: 0, floorNum: 0,
-      maxHp: camp.hp, hp: camp.hp, shield: 0, gold: camp.gold,
+      maxHp: 20, hp: 20, shield: 0, gold: 15,
       weapon: null,
       jokers: [], jokerSlots: 5,
-      pool: camp.pool === 'full54' ? DATA.full54Pool() : DATA.classicPool(),
+      pool: DATA.classicPool(), // 44 cards — the deck grows to 54 as the acts advance
+      grew2: false, grew3: false,
       deck: [], room: [], discard: [],
       fledLast: false, potionsThisRoom: 0, roomResolved: 0,
       mirrorUsed: false, angelUsed: false,
@@ -170,10 +170,6 @@ const E = (() => {
       over: false,
     });
     saveMeta({ runs: (loadMeta().runs || 0) + 1 });
-    for (let i = 0; i < camp.startJokers; i++) {
-      const opts = unownedJokers();
-      addJoker(opts[Math.floor(Math.random() * opts.length)].id);
-    }
     openShop(true); // outfitting: first pick is free, then delve to floor 1
   }
 
@@ -206,6 +202,13 @@ const E = (() => {
   function startFloor() {
     S.floorNum++;
     S.boss = null;
+    // the dungeon grows: 5 new cards join the pool at each act boundary
+    let grew = null;
+    if (S.mode === 'gauntlet' && S.act >= 2 && !S['grew' + Math.min(S.act, 3)]) {
+      S['grew' + Math.min(S.act, 3)] = true;
+      grew = DATA.actCards(Math.min(S.act, 3));
+      S.pool.push(...grew);
+    }
     S.floorMod = (S.act >= 2) ? DATA.FLOORMODS[Math.floor(Math.random() * DATA.FLOORMODS.length)].id : null;
     S.deck = shuffle(S.pool.map(DATA.cloneCard));
     if (S.floorMod === 'horde') {
@@ -225,6 +228,7 @@ const E = (() => {
     saveNow();
     UI.showScreen('game');
     UI.renderAll(true);
+    if (grew) UI.modalDeckGrows(grew, S.act);
   }
 
   function dealRoom() {

@@ -106,15 +106,13 @@ const DATA = (() => {
     for (let r = 2; r <= 10; r++) pool.push(makeCard('H', r)); // 9 potions
     return pool;
   }
-  // the full 54: classic + red faces + red aces + 2 jokers
-  function full54Pool() {
-    const pool = classicPool();
-    for (const suit of ['D', 'H']) for (let r = 11; r <= 13; r++) pool.push(makeCard(suit, r));
-    pool.push(makeCard('D', 14)); // Kingslayer
-    pool.push(makeCard('H', 14)); // Elixir of Life
-    pool.push(makeCard('X', 0));  // Jester
-    pool.push(makeCard('X', 0));  // Jester
-    return pool;
+  // the deck grows as the acts advance: 44 → 49 → 54
+  const GAUNTLET_WAVES = {
+    2: [['D', 11], ['H', 11], ['D', 12], ['H', 12], ['X', 0]], // the court arrives
+    3: [['D', 13], ['H', 13], ['D', 14], ['H', 14], ['X', 0]], // the crown jewels
+  };
+  function actCards(act) {
+    return (GAUNTLET_WAVES[act] || []).map(([s, r]) => makeCard(s, r));
   }
 
   /* ---------------- JOKERS (passive relics) ---------------- */
@@ -174,26 +172,6 @@ const DATA = (() => {
   ];
   const modById = id => FLOORMODS.find(m => m.id === id);
 
-  /* ---------------- CAMPAIGNS ---------------- */
-  const CAMPAIGNS = [
-    {
-      id: 'classic', name: 'The Long Road', emoji: '🏰', diff: 'BALANCED',
-      desc: 'The standard 44-card dungeon. 20 HP. Build your legend from nothing.',
-      hp: 20, gold: 0, pool: 'classic', startJokers: 0, monsterBonus: 0,
-    },
-    {
-      id: 'knave', name: "Knave's Gauntlet", emoji: '🎲', diff: 'TRICKY',
-      desc: 'Start with a random Joker and 20 gold — but only 15 max HP.',
-      hp: 15, gold: 20, pool: 'classic', startJokers: 1, monsterBonus: 0,
-    },
-    {
-      id: 'full54', name: 'The Full 54', emoji: '🃏', diff: 'CHAOTIC',
-      desc: 'Every card in the deck — Allies, red Aces, both Jesters. But all monsters hit +1 harder.',
-      hp: 20, gold: 0, pool: 'full54', startJokers: 0, monsterBonus: 1,
-    },
-  ];
-  const campaignById = id => CAMPAIGNS.find(c => c.id === id);
-
   /* ---------------- SHOP card offerings ---------------- */
   function randomShopCard(rng) {
     const roll = rng();
@@ -216,8 +194,8 @@ const DATA = (() => {
 
   return {
     SUIT_SYM, rankLabel, MONSTERS, WEAPONS, POTIONS, ALLIES,
-    JOKERS, jokerById, BOSSES, FLOORMODS, modById, CAMPAIGNS, campaignById,
+    JOKERS, jokerById, BOSSES, FLOORMODS, modById,
     makeCard, cloneCard, cardName, cardEmoji, allyDef,
-    classicPool, full54Pool, randomShopCard, newId, ensureIdAbove,
+    classicPool, actCards, randomShopCard, newId, ensureIdAbove,
   };
 })();

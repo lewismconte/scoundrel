@@ -9,7 +9,9 @@ dependencies — double-click `index.html` and play.
 - **CLASSIC RUN** — the original game, faithfully: one 44-card dungeon, no shops, no
   bosses, no mercy. Scored for the leaderboard, so everyone competes on the same deck.
 - **THE GAUNTLET** — the full ride: 3 acts × (2 floors + a boss), 23 Jokers, shops and
-  deckbuilding, all 54 cards. Starts at an outfitting camp where your first pick is free.
+  deckbuilding. Starts at an outfitting camp where your first pick is free, and **the deck
+  grows as you descend**: 44 cards in Act I, the court joins for Act II (49), and the crown
+  jewels complete the full 54 in Act III — right as the monsters toughen up.
 
 **Arcade extras:** runs autosave to your device (continue any time), and there's a global
 **top-50 leaderboard per mode** — powered entirely by GitHub: submitting a score opens a

@@ -49,12 +49,7 @@
 
   // --- menu: modes, continue, leaderboard ---
   $('#mode-classic').addEventListener('click', () => { SFX.unlock(); SFX.play('joker'); E.newClassicRun(); });
-  $('#mode-gauntlet').addEventListener('click', () => {
-    SFX.unlock(); SFX.play('click');
-    const row = $('#campaign-row');
-    row.classList.toggle('hidden');
-    $('#mode-gauntlet').classList.toggle('selected', !row.classList.contains('hidden'));
-  });
+  $('#mode-gauntlet').addEventListener('click', () => { SFX.unlock(); SFX.play('joker'); E.newRun(); });
   $('#btn-continue').addEventListener('click', () => { SFX.unlock(); SFX.play('deal'); UI.resumeRun(); });
   $('#btn-board').addEventListener('click', () => { SFX.play('click'); UI.modalLeaderboard(); });
 

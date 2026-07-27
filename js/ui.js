@@ -671,14 +671,14 @@ const UI = (() => {
         <li><b>♠ ♣ Monsters</b> — fight barehanded (take full value) or with your weapon (take value − weapon power).</li>
         <li><b>♦ Weapons</b> — equip one at a time. A weapon <b>degrades</b>: each monster it slays must be <i>weaker than the last</i>.</li>
         <li><b>♥ Potions</b> — heal their value, but only the <b>first potion each room</b> works.</li>
-        <li><b>Red faces & aces</b> — Allies and legendary cards, found in shops (or start with them in The Full 54).</li>
+        <li><b>Red faces & aces</b> — Allies and legendary cards that join the dungeon as the acts advance (and turn up in shops).</li>
         <li><b>🃏 Jesters</b> — grant a random Joker on sight.</li>
       </ul>
       <h3>The run</h3>
       <ul>
         <li>Slaying monsters earns <b>gold</b>. Spend it in the camp between floors: <b>Jokers</b> (passive powers), new cards for your dungeon deck, card removal, healing.</li>
         <li><b>Bosses</b> end each act: spend 3 actions per wave on room cards or <b>STRIKE</b> — then the boss hits back.</li>
-        <li>Deeper acts add <b>floor modifiers</b> and tougher monsters. Death is forever. Good luck, scoundrel.</li>
+        <li>Each act the <b>deck grows</b> — 44 cards, then 49, then the full 54 — alongside floor modifiers and tougher monsters. Death is forever. Good luck, scoundrel.</li>
       </ul>
       <p class="credit-line">Based on the card game <b>Scoundrel</b> by <b>Zach Gage &amp; Kurt Bieg</b> (2011). This is an unofficial, non-commercial fan adaptation — not affiliated with or endorsed by the original creators. Feel inspired by Balatro (LocalThunk).</p>
       <div class="modal-foot"><button class="btn" id="modal-close">GOT IT</button></div>`);
@@ -853,6 +853,26 @@ const UI = (() => {
     render();
   }
 
+  /* the dungeon grows: reveal the 5 cards joining the deck this act */
+  function modalDeckGrows(cards, act) {
+    SFX.play('joker');
+    openModal(`
+      <h2>${act >= 3 ? '👑 THE FULL 54' : '🎭 THE DUNGEON GROWS'}</h2>
+      <p>${act >= 3
+        ? 'The final five slip into your deck — the dungeon is complete, and every monster now hits <b>+1</b> harder.'
+        : 'The court arrives. Five new cards shuffle into your dungeon from here on:'}</p>
+      <div class="reward-row" id="grow-row"></div>
+      <div class="modal-foot"><button class="btn btn-go" id="modal-close">BRING IT ON</button></div>`);
+    const row = $('#grow-row');
+    cards.forEach(c => {
+      const m = cardMiniEl(c);
+      const a = DATA.allyDef(c);
+      if (a) attachTooltip(m, `<div class="tt-name">${a.emoji} ${a.name}</div><div class="tt-desc">${a.desc}</div>`);
+      row.appendChild(m);
+    });
+    $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
+  }
+
   /* ============================ boss splash ============================ */
   function bossSplash(def) {
     SFX.play('roar');
@@ -926,21 +946,6 @@ const UI = (() => {
 
   /* ============================ menu & game over ============================ */
   function renderMenu() {
-    const row = $('#campaign-row');
-    row.innerHTML = '';
-    row.classList.add('hidden');
-    $('#mode-gauntlet').classList.remove('selected');
-    DATA.CAMPAIGNS.forEach(c => {
-      const el = document.createElement('div');
-      el.className = 'campaign';
-      el.innerHTML = `
-        <div class="camp-emoji">${PIX.emojiImg(c.emoji, 14, 52)}</div>
-        <h3>${c.name}</h3>
-        <p>${c.desc}</p>
-        <div class="camp-diff">${c.diff}</div>`;
-      el.addEventListener('click', () => { SFX.unlock(); SFX.play('joker'); E.newRun(c.id); });
-      row.appendChild(el);
-    });
     const save = E.savedRun();
     const cont = $('#btn-continue');
     cont.style.display = save ? '' : 'none';
@@ -1006,7 +1011,7 @@ const UI = (() => {
     showScreen, renderAll, renderSidebar, renderPiles, renderJokers, renderRoom, renderBoss, renderShop,
     renderMenu, resumeRun, playEvents, floatAt, floatCenter, shake, hurtFlash, spawnBurst, particleLoop,
     openModal, closeModal, modalHowTo, modalDeckView, modalDiscardView, modalAbandon, modalBossReward,
-    modalLeaderboard, modalSubmitScore,
+    modalLeaderboard, modalSubmitScore, modalDeckGrows,
     bossSplash, gameOver, flyTo, fleeWithFlight,
     get busy() { return busy; },
   };
