@@ -787,37 +787,87 @@ const UI = (() => {
 
   /* ============================ leaderboard & score submit ============================ */
   const REPO = 'lewismconte/scoundrel';
+  /* Cloudflare Worker that accepts scores without a GitHub login (see worker/README.md).
+     While this is empty the game falls back to the GitHub-issue flow, so the board keeps
+     working either way. */
+  const BOARD_API = '';
+
+  /* Board entries come off the network and land in innerHTML. The worker already
+     restricts them to a markup-free charset, but escaping here means a bad entry
+     can never execute even if it arrives from somewhere else. */
+  const esc = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   function modalSubmitScore() {
     const fsc = S.finalScore;
     if (!fsc) return;
     const saved = localStorage.getItem('scoundrel_initials') || '';
+    const online = !!BOARD_API;
     openModal(`
       <h2>${hIcon('\u{1F3C6}')} SUBMIT SCORE - ${fsc.score}</h2>
       <p>Enter your arcade initials:</p>
       <div style="text-align:center;margin:14px 0">
-        <input class="initials-input" id="initials" maxlength="3" value="${saved}" placeholder="AAA">
+        <input class="initials-input" id="initials" maxlength="3" value="${esc(saved)}" placeholder="AAA">
       </div>
-      <p>Submitting opens <b>GitHub</b> with a pre-filled score report - sign in and press
-      <b>Submit new issue</b>. A bot verifies it and the board updates in a couple of minutes.
-      No account? Your score still counts on this device's local board.</p>
+      <p id="submit-note">${online
+        ? 'Your score goes straight to the global board - no account, no sign-in.'
+        : 'Submitting opens <b>GitHub</b> with a pre-filled score report - sign in and press <b>Submit new issue</b>. A bot verifies it and the board updates in a couple of minutes. No account? Your score still counts on this device\'s local board.'}</p>
       <div class="modal-foot">
-        <button class="btn btn-go" id="submit-go">OPEN GITHUB &gt;&gt;</button>
-        <button class="btn btn-ghost" id="modal-close">CANCEL</button>
+        <button class="btn btn-go" id="submit-go">${online ? 'SEND IT' : 'OPEN GITHUB &gt;&gt;'}</button>
+        <button class="btn btn-ghost" id="modal-close">${online ? 'CANCEL' : 'CANCEL'}</button>
       </div>`);
     const inp = $('#initials');
     inp.focus();
+
+    const initials = () => (inp.value || 'AAA').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 3) || 'AAA';
+
     $('#submit-go').addEventListener('click', () => {
-      const name = (inp.value || 'AAA').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 3) || 'AAA';
+      const name = initials();
       localStorage.setItem('scoundrel_initials', name);
       const entry = { name, score: fsc.score, mode: fsc.mode, detail: fsc.detail };
-      const body = 'Automated score submission for the SCOUNDREL leaderboard.\n' +
-        'Just press **Submit new issue** - a bot records it and closes this.\n\n' +
-        '```json\n' + JSON.stringify(entry) + '\n```\n';
-      const url = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(`[SCORE] ${name} ${fsc.score} (${fsc.mode})`)}&body=${encodeURIComponent(body)}`;
+
+      if (!online) { // legacy path: hand the entry to the GitHub issue bot
+        const body = 'Automated score submission for the SCOUNDREL leaderboard.\n' +
+          'Just press **Submit new issue** - a bot records it and closes this.\n\n' +
+          '```json\n' + JSON.stringify(entry) + '\n```\n';
+        const url = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(`[SCORE] ${name} ${fsc.score} (${fsc.mode})`)}&body=${encodeURIComponent(body)}`;
+        SFX.play('coin');
+        window.open(url, '_blank');
+        closeModal();
+        return;
+      }
+
+      const btn = $('#submit-go');
+      btn.disabled = true;
+      btn.textContent = 'SENDING...';
       SFX.play('coin');
-      window.open(url, '_blank');
-      closeModal();
+      fetch(BOARD_API.replace(/\/$/, '') + '/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+      })
+        .then(r => r.json().then(j => ({ ok: r.ok, j })))
+        .then(({ ok, j }) => {
+          if (!ok || !j.ok) throw new Error(j && j.error ? j.error : 'rejected');
+          SFX.play('fanfare');
+          const note = $('#submit-note');
+          if (note) {
+            note.innerHTML = j.rank
+              ? `<b>ON THE BOARD AT #${j.rank}</b> - well fought, ${esc(name)}.`
+              : `Recorded, but it did not crack the top 50 this time.`;
+          }
+          btn.textContent = 'DONE';
+          const close = $('#modal-close');
+          if (close) close.textContent = 'CLOSE';
+        })
+        .catch(err => {
+          SFX.play('error');
+          const note = $('#submit-note');
+          if (note) note.textContent = `Could not reach the board (${err.message}). Your score is still saved on this device.`;
+          btn.disabled = false;
+          btn.textContent = 'TRY AGAIN';
+        });
     });
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
   }
@@ -827,9 +877,9 @@ const UI = (() => {
     return list.map((s, i) => `
       <tr>
         <td class="b-rank">${i + 1}</td>
-        <td class="b-name">${String(s.name || '???').slice(0, 3).toUpperCase()}</td>
-        <td><div class="b-detail">${s.detail || ''}${s.date ? ' - ' + s.date : ''}</div></td>
-        <td class="b-score">${s.score}</td>
+        <td class="b-name">${esc(String(s.name || '???').slice(0, 3).toUpperCase())}</td>
+        <td><div class="b-detail">${esc(s.detail)}${s.date ? ' - ' + esc(s.date) : ''}</div></td>
+        <td class="b-score">${esc(s.score)}</td>
       </tr>`).join('');
   }
 
@@ -841,7 +891,7 @@ const UI = (() => {
         <button class="btn" id="tab-gauntlet">GAUNTLET</button>
       </div>
       <div id="board-body"><p style="opacity:.6">fetching scores...</p></div>
-      <p class="board-note" id="board-note">Top 50 per mode. Scores are player-submitted via GitHub and honour-system - settle disputes with a duel.</p>
+      <p class="board-note" id="board-note">Top 50 per mode. Scores are player-submitted and honour-system - settle disputes with a duel.</p>
       <div class="modal-foot"><button class="btn" id="modal-close">CLOSE</button></div>`);
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
 
@@ -865,10 +915,18 @@ const UI = (() => {
     };
     $('#tab-classic').addEventListener('click', () => { SFX.play('click'); setTab('classic'); });
     $('#tab-gauntlet').addEventListener('click', () => { SFX.play('click'); setTab('gauntlet'); });
-    fetch('leaderboard.json?t=' + Date.now())
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { board = j; render(); })
-      .catch(() => render());
+    // live worker board first, the committed JSON as a fallback if it is unreachable
+    const sources = BOARD_API
+      ? [BOARD_API.replace(/\/$/, '') + '/board', 'leaderboard.json?t=' + Date.now()]
+      : ['leaderboard.json?t=' + Date.now()];
+    const tryNext = i => {
+      if (i >= sources.length) { render(); return; }
+      fetch(sources[i])
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
+        .then(j => { board = j; render(); })
+        .catch(() => tryNext(i + 1));
+    };
+    tryNext(0);
     render();
   }
 
