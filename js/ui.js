@@ -790,7 +790,7 @@ const UI = (() => {
   /* Cloudflare Worker that accepts scores without a GitHub login (see worker/README.md).
      While this is empty the game falls back to the GitHub-issue flow, so the board keeps
      working either way. */
-  const BOARD_API = '';
+  const BOARD_API = 'https://scoundrel-board.lewismconte.workers.dev';
 
   /* Board entries come off the network and land in innerHTML. The worker already
      restricts them to a markup-free charset, but escaping here means a bad entry
