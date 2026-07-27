@@ -1,6 +1,13 @@
 {
  "classic": [
   {
+   "name": "LOU",
+   "score": 210,
+   "mode": "classic",
+   "detail": "14/26 slain · 0 HP",
+   "date": "2026-07-27"
+  },
+  {
    "name": "LUI",
    "score": 105,
    "mode": "classic",
