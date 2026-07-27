@@ -69,7 +69,7 @@ const UI = (() => {
     el.dataset.id = card.id;
     el.style.setProperty('--bob-dur', (3 + Math.random() * 1.4).toFixed(2) + 's');
     el.style.setProperty('--bob-delay', (-Math.random() * 3).toFixed(2) + 's');
-    const rl = card.suit === 'X' ? '★' : DATA.rankLabel(card.rank);
+    const rl = card.suit === 'X' ? '*' : DATA.rankLabel(card.rank);
     const suit = PIX.suitImg(card.suit, 14);
     el.innerHTML = `
       <div class="corner tl"><span class="rank">${rl}</span>${suit}</div>
@@ -83,7 +83,7 @@ const UI = (() => {
     if (card.kind === 'monster' && card.rank >= 12) el.classList.add('miniboss');
     if (card.kind === 'ally' || card.kind === 'wild') {
       const a = DATA.allyDef(card);
-      attachTooltip(el, `<div class="tt-name">${a.emoji} ${a.name}</div><div class="tt-desc">${a.desc}</div>`);
+      attachTooltip(el, `<div class="tt-name">${PIX.emojiImg(a.emoji, 10, 16)} ${a.name}</div><div class="tt-desc">${a.desc}</div>`);
     }
     // hover tilt (the balatro wiggle)
     el.addEventListener('mousemove', e => {
@@ -104,7 +104,7 @@ const UI = (() => {
     const el = document.createElement('div');
     el.className = `card-mini suit-${card.suit}`;
     el.dataset.id = card.id;
-    const rl = card.suit === 'X' ? '★' : DATA.rankLabel(card.rank);
+    const rl = card.suit === 'X' ? '*' : DATA.rankLabel(card.rank);
     el.innerHTML = `
       <div class="m-rank">${rl}${card.suit === 'X' ? '' : PIX.suitImg(card.suit, 9)}</div>
       <div class="m-emoji">${PIX.emojiImg(DATA.cardEmoji(card), 12, 32)}</div>
@@ -119,7 +119,7 @@ const UI = (() => {
     el.style.setProperty('--bob-dur', (3 + Math.random() * 1.5).toFixed(2) + 's');
     el.style.setProperty('--bob-delay', (-Math.random() * 3).toFixed(2) + 's');
     el.innerHTML = `<div class="j-emoji">${PIX.emojiImg(def.emoji, 12, 36)}</div><div class="j-name">${def.name}</div>`;
-    attachTooltip(el, `<div class="tt-name">${def.emoji} ${def.name}</div><div class="tt-desc">${def.desc}</div>`);
+    attachTooltip(el, `<div class="tt-name">${PIX.emojiImg(def.emoji, 10, 16)} ${def.name}</div><div class="tt-desc">${def.desc}</div>`);
     if (opts.sellable) {
       el.classList.add('sellable');
       const x = document.createElement('button');
@@ -150,13 +150,13 @@ const UI = (() => {
   function renderSidebar() {
     const stageName = S.stage === 2 ? 'BOSS FIGHT' : `FLOOR ${S.stage + 1}`;
     $('#floor-label').textContent = S.mode === 'classic'
-      ? 'CLASSIC · THE DUNGEON'
-      : `ACT ${ROMAN[S.act] || S.act} · ${stageName}`;
+      ? 'CLASSIC - THE DUNGEON'
+      : `ACT ${ROMAN[S.act] || S.act} - ${stageName}`;
     document.querySelector('.gold-block').style.display = S.mode === 'classic' ? 'none' : '';
     const modEl = $('#floor-mod');
     if (S.floorMod) {
       const m = DATA.modById(S.floorMod);
-      modEl.textContent = `${m.emoji} ${m.name} — ${m.desc}`;
+      modEl.textContent = `${m.name.toUpperCase()} - ${m.desc}`;
       modEl.classList.add('on');
     } else modEl.classList.remove('on');
 
@@ -169,7 +169,7 @@ const UI = (() => {
 
     const fleeBtn = $('#btn-flee');
     fleeBtn.disabled = !E.canFlee() || busy;
-    fleeBtn.textContent = S.fledLast && !E.hasJoker('map') ? '🏃 CAN\'T FLEE TWICE' : '🏃 FLEE ROOM';
+    fleeBtn.textContent = S.fledLast && !E.hasJoker('map') ? "CAN'T FLEE TWICE" : 'FLEE ROOM';
   }
 
   /* the dungeon pile, discard pile and weapon-in-play — the tabletop layout */
@@ -210,8 +210,8 @@ const UI = (() => {
       let txt = `PWR ${E.weaponPower()}`;
       if (S.weapon.bonus > 0) txt += ` (+${S.weapon.bonus})`;
       const lim = S.weapon.lastSlain == null
-        ? '<span class="degrade">fresh edge — slays anything</span>'
-        : `<span class="degrade">next kill must be ${E.hasJoker('whetstone') ? '≤' : '<'} ${S.weapon.lastSlain}</span>`;
+        ? '<span class="degrade">fresh edge - slays anything</span>'
+        : `<span class="degrade">next kill must be ${E.hasJoker('whetstone') ? '&lt;=' : '&lt;'} ${S.weapon.lastSlain}</span>`;
       info.innerHTML = txt + lim;
     } else {
       slot.innerHTML = '<div class="weapon-empty">bare hands<br>(full damage)</div>';
@@ -286,9 +286,9 @@ const UI = (() => {
     if (fresh.length > 0) SFX.play('deal');
 
     if (S.over) $('#room-banner').textContent = '';
-    else if (S.boss) $('#room-banner').textContent = `Wave ${S.boss.wave} — spend ⚡ actions on cards or STRIKE the boss`;
+    else if (S.boss) $('#room-banner').textContent = `WAVE ${S.boss.wave} - play cards or STRIKE the boss`;
     else if (S.room.length === 0 && S.deck.length === 0) $('#room-banner').textContent = '';
-    else $('#room-banner').textContent = `resolve cards — the last one carries over`;
+    else $('#room-banner').textContent = 'resolve cards - the last one carries over';
   }
 
   function renderBoss() {
@@ -309,7 +309,7 @@ const UI = (() => {
       <div class="boss-right">
         <div class="boss-power">PWR ${b.power}</div>
         <div class="action-pips">${[1, 2, 3].map(i => `<div class="pip ${i > S.actionsLeft ? 'used' : ''}"></div>`).join('')}</div>
-        <button class="btn btn-strike" id="btn-strike">⚔ STRIKE (${E.strikeDamage()})</button>
+        <button class="btn btn-strike" id="btn-strike">STRIKE (${E.strikeDamage()})</button>
       </div>`;
     $('#btn-strike').addEventListener('click', () => {
       if (busy || S.over) return;
@@ -339,12 +339,12 @@ const UI = (() => {
       let html = '';
       if (S.weapon) {
         if (E.canUseWeapon(card)) {
-          html += `<button class="ch-w">⚔ weapon · take ${E.previewDamage(card, 'weapon')}</button>`;
+          html += `<button class="ch-w">WEAPON - take ${E.previewDamage(card, 'weapon')}</button>`;
         } else {
-          html += `<button class="ch-w" disabled>⚔ too worn (need ${E.hasJoker('whetstone') ? '≤' : '<'} ${S.weapon.lastSlain})</button>`;
+          html += `<button class="ch-w" disabled>TOO WORN (need ${E.hasJoker('whetstone') ? '&lt;=' : '&lt;'} ${S.weapon.lastSlain})</button>`;
         }
       }
-      html += `<button class="ch-b">✊ barehanded · take ${bare}</button>`;
+      html += `<button class="ch-b">BARE HANDS - take ${bare}</button>`;
       ch.innerHTML = html;
       const wBtn = ch.querySelector('.ch-w');
       if (wBtn && !wBtn.disabled) wBtn.addEventListener('click', ev => { ev.stopPropagation(); doResolve(card, 'weapon', node); });
@@ -480,12 +480,12 @@ const UI = (() => {
         }); break;
         case 'shieldHit': later(() => {
           const p = rectCenter('#shield-chip');
-          floatAt(p.x, p.y - 10, '🛡 -' + ev.amt, 'info');
+          floatAt(p.x, p.y - 10, '-' + ev.amt + ' SHIELD', 'info');
           SFX.play('shield');
           renderSidebar();
         }); break;
         case 'nodmg': later(() => floatAt(anchor.x, anchor.y - 40, 'FLAWLESS!', 'info')); break;
-        case 'mirror': later(() => floatAt(anchor.x, anchor.y - 20, '🪞 blocked ' + ev.blocked, 'info')); break;
+        case 'mirror': later(() => floatAt(anchor.x, anchor.y - 20, 'BLOCKED ' + ev.blocked, 'info')); break;
         case 'heal': later(() => {
           const p = rectCenter('#hp-orb');
           floatAt(p.x, p.y - 30, '+' + ev.amt, 'heal');
@@ -495,7 +495,7 @@ const UI = (() => {
         }); break;
         case 'healFull': later(() => floatAt(rectCenter('#hp-orb').x, rectCenter('#hp-orb').y - 30, 'FULL', 'info')); break;
         case 'shield': later(() => {
-          floatAt(rectCenter('#hp-orb').x, rectCenter('#hp-orb').y - 30, '+' + ev.amt + ' 🛡', 'info');
+          floatAt(rectCenter('#hp-orb').x, rectCenter('#hp-orb').y - 30, '+' + ev.amt + ' SHIELD', 'info');
           SFX.play('shield');
           renderSidebar();
         }); break;
@@ -510,27 +510,27 @@ const UI = (() => {
         case 'wasted': later(() => { floatAt(anchor.x, anchor.y - 30, 'WASTED!', 'info'); SFX.play('error'); }); break;
         case 'shatter': later(() => {
           const p = rectCenter('#weapon-slot');
-          floatAt(p.x, p.y - 20, '💥 SNAPPED!', 'hurt');
+          floatAt(p.x, p.y - 20, 'SNAPPED!', 'hurt');
           SFX.play('snap'); shake(false);
           renderPiles();
         }); break;
-        case 'polish': later(() => floatAt(rectCenter('#weapon-slot').x, rectCenter('#weapon-slot').y - 20, '✨ POLISHED', 'info')); break;
+        case 'polish': later(() => floatAt(rectCenter('#weapon-slot').x, rectCenter('#weapon-slot').y - 20, 'POLISHED!', 'info')); break;
         case 'sharpen': later(() => floatAt(rectCenter('#weapon-slot').x, rectCenter('#weapon-slot').y - 20, '+' + ev.amt + ' PWR', 'gold')); break;
-        case 'noWeapon': later(() => floatAt(anchor.x, anchor.y - 30, 'no weapon…', 'info')); break;
-        case 'saved': later(() => { floatCenter('👼 SAVED!', 'heal big'); SFX.play('heal'); }); break;
+        case 'noWeapon': later(() => floatAt(anchor.x, anchor.y - 30, 'NO WEAPON', 'info')); break;
+        case 'saved': later(() => { floatCenter('SAVED!', 'heal big'); SFX.play('heal'); }); break;
         case 'jester': later(() => {
           SFX.play('joker');
-          floatCenter(ev.joker ? '🃏 ' + ev.joker.name + '!' : '🃏 +' + ev.gold + ' gold!', 'gold big');
+          floatCenter(ev.joker ? ev.joker.name + '!' : '+' + ev.gold + ' GOLD!', 'gold big');
           renderJokers();
         }); break;
-        case 'fled': later(() => { SFX.play('flee'); floatCenter('You slip away…', 'info'); }); break;
+        case 'fled': later(() => { SFX.play('flee'); floatCenter('You slip away...', 'info'); }); break;
         case 'floorClear': later(() => {
           SFX.play('fanfare');
           floatCenter('FLOOR CLEARED! +' + ev.bonus + 'g', 'gold big');
           setTimeout(() => { if (!S.over) E.openShop(); }, 1500);
         }); break;
         case 'bossAttack': later(() => {
-          floatCenter(S.boss ? S.boss.emoji + ' hits for ' + ev.amt + '!' : 'hit for ' + ev.amt + '!', 'hurt');
+          floatCenter('THE BOSS HITS FOR ' + ev.amt + '!', 'hurt');
         }); break;
         case 'bossDmg': later(() => {
           const p = rectCenter('#bossbar');
@@ -551,7 +551,7 @@ const UI = (() => {
         case 'death': later(() => { SFX.play('die'); shake(true); setTimeout(() => gameOver(false), 1100); }); break;
         case 'victory': later(() => setTimeout(() => gameOver(true), 1500)); break;
         case 'cant': later(() => SFX.play('error')); break;
-        case 'slotsFull': later(() => { SFX.play('error'); floatCenter('Joker slots full!', 'info'); }); break;
+        case 'slotsFull': later(() => { SFX.play('error'); floatCenter('JOKER SLOTS FULL!', 'info'); }); break;
         case 'bought': later(() => { SFX.play('buy'); renderShop(); }); break;
         case 'reroll': later(() => { SFX.play('deal'); renderShop(); }); break;
         case 'removed': later(() => { SFX.play('snap'); }); break;
@@ -657,30 +657,33 @@ const UI = (() => {
   }
   function closeModal() { $('#modal-wrap').classList.add('hidden'); hideTip(); }
 
+  // pixel icon for modal headings
+  const hIcon = e => PIX.emojiImg(e, 12, 26, 'h-ico');
+
   function modalHowTo() {
     openModal(`
-      <h2>📜 HOW TO PLAY</h2>
-      <p>You are a scoundrel fleeing through a dungeon made of cards. Survive 3 acts — two floors and a boss each — and escape with the loot.</p>
+      <h2>${hIcon('📜')} HOW TO PLAY</h2>
+      <p>You are a scoundrel fleeing through a dungeon made of cards. Survive 3 acts - two floors and a boss each - and escape with the loot.</p>
       <h3>Rooms</h3>
       <ul>
-        <li>Each room deals <b>4 cards</b>. Resolve them one at a time — when <b>one card remains</b>, it carries into the next room.</li>
-        <li>You may <b>FLEE</b> a room before touching any card (cards go to the bottom of the deck) — but never twice in a row.</li>
+        <li>Each room deals <b>4 cards</b>. Resolve them one at a time - when <b>one card remains</b>, it carries into the next room.</li>
+        <li>You may <b>FLEE</b> a room before touching any card (cards go to the bottom of the deck) - but never twice in a row.</li>
       </ul>
       <h3>The cards</h3>
       <ul>
-        <li><b>♠ ♣ Monsters</b> — fight barehanded (take full value) or with your weapon (take value − weapon power).</li>
-        <li><b>♦ Weapons</b> — equip one at a time. A weapon <b>degrades</b>: each monster it slays must be <i>weaker than the last</i>.</li>
-        <li><b>♥ Potions</b> — heal their value, but only the <b>first potion each room</b> works.</li>
-        <li><b>Red faces & aces</b> — Allies and legendary cards that join the dungeon as the acts advance (and turn up in shops).</li>
-        <li><b>🃏 Jesters</b> — grant a random Joker on sight.</li>
+        <li><b>Spades &amp; Clubs are monsters</b> - fight barehanded (take full value) or with your weapon (take value minus weapon power).</li>
+        <li><b>Diamonds are weapons</b> - equip one at a time. A weapon <b>degrades</b>: each monster it slays must be <i>weaker than the last</i>.</li>
+        <li><b>Hearts are potions</b> - heal their value, but only the <b>first potion each room</b> works.</li>
+        <li><b>Red faces &amp; aces</b> - Allies and legendary cards that join the dungeon as the acts advance (and turn up in shops).</li>
+        <li><b>Jesters</b> - grant a random Joker on sight.</li>
       </ul>
       <h3>The run</h3>
       <ul>
         <li>Slaying monsters earns <b>gold</b>. Spend it in the camp between floors: <b>Jokers</b> (passive powers), new cards for your dungeon deck, card removal, healing.</li>
-        <li><b>Bosses</b> end each act: spend 3 actions per wave on room cards or <b>STRIKE</b> — then the boss hits back.</li>
-        <li>Each act the <b>deck grows</b> — 44 cards, then 49, then the full 54 — alongside floor modifiers and tougher monsters. Death is forever. Good luck, scoundrel.</li>
+        <li><b>Bosses</b> end each act: spend 3 actions per wave on room cards or <b>STRIKE</b> - then the boss hits back.</li>
+        <li>Each act the <b>deck grows</b> - 44 cards, then 49, then the full 54 - alongside floor modifiers and tougher monsters. Death is forever. Good luck, scoundrel.</li>
       </ul>
-      <p class="credit-line">Based on the card game <b>Scoundrel</b> by <b>Zach Gage &amp; Kurt Bieg</b> (2011). This is an unofficial, non-commercial fan adaptation — not affiliated with or endorsed by the original creators. Feel inspired by Balatro (LocalThunk).</p>
+      <p class="credit-line">Based on the card game <b>Scoundrel</b> by <b>Zach Gage &amp; Kurt Bieg</b> (2011). This is an unofficial, non-commercial fan adaptation - not affiliated with or endorsed by the original creators. Feel inspired by Balatro (LocalThunk).</p>
       <div class="modal-foot"><button class="btn" id="modal-close">GOT IT</button></div>`);
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
   }
@@ -700,16 +703,16 @@ const UI = (() => {
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
   }
   function modalDeckView() {
-    modalPileView(S.boss ? S.bossDeck : S.deck, '🂠 THE DUNGEON');
+    modalPileView(S.boss ? S.bossDeck : S.deck, 'THE DUNGEON');
   }
   function modalDiscardView() {
-    modalPileView(S.boss ? S.bossDiscard : (S.discard || []), '🗑️ DISCARD');
+    modalPileView(S.boss ? S.bossDiscard : (S.discard || []), 'DISCARD');
   }
 
   function modalRemoveCard() {
     openModal(`
-      <h2>🗑️ REMOVE A CARD — ${S.shop.removeCost}g</h2>
-      <p>Permanently remove one card from your dungeon deck. You hold 🪙 <b id="rm-gold">${S.gold}</b>.</p>
+      <h2>REMOVE A CARD - ${S.shop.removeCost}g</h2>
+      <p>Permanently remove one card from your dungeon deck. You hold <b id="rm-gold">${S.gold}</b> gold.</p>
       <div class="deck-grid" id="deck-grid"></div>
       <div class="modal-foot"><button class="btn btn-ghost" id="modal-close">NEVER MIND</button></div>`);
     const g = $('#deck-grid');
@@ -730,10 +733,10 @@ const UI = (() => {
 
   function modalBossReward(ev) {
     openModal(`
-      <h2>⚱️ SPOILS OF WAR</h2>
-      <p>Choose a Joker${S.jokers.length >= S.jokerSlots ? ' <b>(slots full!)</b>' : ''} — or take the gold.</p>
+      <h2>SPOILS OF WAR</h2>
+      <p>Choose a Joker${S.jokers.length >= S.jokerSlots ? ' <b>(slots full!)</b>' : ''} - or take the gold.</p>
       <div class="reward-row" id="reward-row"></div>
-      <div class="modal-foot"><button class="btn btn-go" id="reward-gold">TAKE 🪙 ${ev.gold}</button></div>`);
+      <div class="modal-foot"><button class="btn btn-go" id="reward-gold">TAKE ${ev.gold} GOLD</button></div>`);
     const row = $('#reward-row');
     ev.jokers.forEach(j => {
       const el = jokerEl(j);
@@ -756,7 +759,7 @@ const UI = (() => {
 
   function modalAbandon() {
     openModal(`
-      <h2>✖ ABANDON RUN?</h2>
+      <h2>ABANDON RUN?</h2>
       <p>This scoundrel will be lost to the dungeon.</p>
       <div class="modal-foot">
         <button class="btn" id="ab-yes">ABANDON</button>
@@ -774,16 +777,16 @@ const UI = (() => {
     if (!fsc) return;
     const saved = localStorage.getItem('scoundrel_initials') || '';
     openModal(`
-      <h2>🏆 SUBMIT SCORE — ${fsc.score}</h2>
+      <h2>${hIcon('\u{1F3C6}')} SUBMIT SCORE - ${fsc.score}</h2>
       <p>Enter your arcade initials:</p>
       <div style="text-align:center;margin:14px 0">
         <input class="initials-input" id="initials" maxlength="3" value="${saved}" placeholder="AAA">
       </div>
-      <p>Submitting opens <b>GitHub</b> with a pre-filled score report — sign in and press
+      <p>Submitting opens <b>GitHub</b> with a pre-filled score report - sign in and press
       <b>Submit new issue</b>. A bot verifies it and the board updates in a couple of minutes.
       No account? Your score still counts on this device's local board.</p>
       <div class="modal-foot">
-        <button class="btn btn-go" id="submit-go">OPEN GITHUB →</button>
+        <button class="btn btn-go" id="submit-go">OPEN GITHUB &gt;&gt;</button>
         <button class="btn btn-ghost" id="modal-close">CANCEL</button>
       </div>`);
     const inp = $('#initials');
@@ -793,7 +796,7 @@ const UI = (() => {
       localStorage.setItem('scoundrel_initials', name);
       const entry = { name, score: fsc.score, mode: fsc.mode, detail: fsc.detail };
       const body = 'Automated score submission for the SCOUNDREL leaderboard.\n' +
-        'Just press **Submit new issue** — a bot records it and closes this.\n\n' +
+        'Just press **Submit new issue** - a bot records it and closes this.\n\n' +
         '```json\n' + JSON.stringify(entry) + '\n```\n';
       const url = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(`[SCORE] ${name} ${fsc.score} (${fsc.mode})`)}&body=${encodeURIComponent(body)}`;
       SFX.play('coin');
@@ -804,25 +807,25 @@ const UI = (() => {
   }
 
   function boardRows(list) {
-    if (!list || list.length === 0) return '<tr><td colspan="4" style="opacity:.5;padding:14px">no scores yet — be the first!</td></tr>';
+    if (!list || list.length === 0) return '<tr><td colspan="4" style="opacity:.5;padding:14px">no scores yet - be the first!</td></tr>';
     return list.map((s, i) => `
       <tr>
         <td class="b-rank">${i + 1}</td>
         <td class="b-name">${String(s.name || '???').slice(0, 3).toUpperCase()}</td>
-        <td><div class="b-detail">${s.detail || ''}${s.date ? ' · ' + s.date : ''}</div></td>
+        <td><div class="b-detail">${s.detail || ''}${s.date ? ' - ' + s.date : ''}</div></td>
         <td class="b-score">${s.score}</td>
       </tr>`).join('');
   }
 
   function modalLeaderboard() {
     openModal(`
-      <h2>🏆 LEADERBOARD</h2>
+      <h2>${hIcon('\u{1F3C6}')} LEADERBOARD</h2>
       <div class="board-tabs">
         <button class="btn on" id="tab-classic">CLASSIC</button>
         <button class="btn" id="tab-gauntlet">GAUNTLET</button>
       </div>
-      <div id="board-body"><p style="opacity:.6">fetching scores…</p></div>
-      <p class="board-note" id="board-note">Top 50 per mode. Scores are player-submitted via GitHub and honour-system — settle disputes with a duel.</p>
+      <div id="board-body"><p style="opacity:.6">fetching scores...</p></div>
+      <p class="board-note" id="board-note">Top 50 per mode. Scores are player-submitted via GitHub and honour-system - settle disputes with a duel.</p>
       <div class="modal-foot"><button class="btn" id="modal-close">CLOSE</button></div>`);
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
 
@@ -834,7 +837,7 @@ const UI = (() => {
         body.innerHTML = `<table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(board[tab])}</table>`;
       } else {
         const local = E.localScores().filter(s => s.mode === tab);
-        body.innerHTML = `<p style="opacity:.7;font-size:9px;margin-bottom:8px">⚠ couldn't reach the online board — showing this device's scores.</p>
+        body.innerHTML = `<p style="opacity:.7;font-size:9px;margin-bottom:8px">couldn't reach the online board - showing this device's scores.</p>
           <table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(local.map(s => ({ ...s, name: 'YOU' })))}</table>`;
       }
     };
@@ -857,9 +860,9 @@ const UI = (() => {
   function modalDeckGrows(cards, act) {
     SFX.play('joker');
     openModal(`
-      <h2>${act >= 3 ? '👑 THE FULL 54' : '🎭 THE DUNGEON GROWS'}</h2>
+      <h2>${act >= 3 ? 'THE FULL 54' : 'THE DUNGEON GROWS'}</h2>
       <p>${act >= 3
-        ? 'The final five slip into your deck — the dungeon is complete, and every monster now hits <b>+1</b> harder.'
+        ? 'The final five slip into your deck - the dungeon is complete, and every monster now hits <b>+1</b> harder.'
         : 'The court arrives. Five new cards shuffle into your dungeon from here on:'}</p>
       <div class="reward-row" id="grow-row"></div>
       <div class="modal-foot"><button class="btn btn-go" id="modal-close">BRING IT ON</button></div>`);
@@ -867,7 +870,7 @@ const UI = (() => {
     cards.forEach(c => {
       const m = cardMiniEl(c);
       const a = DATA.allyDef(c);
-      if (a) attachTooltip(m, `<div class="tt-name">${a.emoji} ${a.name}</div><div class="tt-desc">${a.desc}</div>`);
+      if (a) attachTooltip(m, `<div class="tt-name">${PIX.emojiImg(a.emoji, 10, 16)} ${a.name}</div><div class="tt-desc">${a.desc}</div>`);
       row.appendChild(m);
     });
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
@@ -891,8 +894,8 @@ const UI = (() => {
   function renderShop() {
     const free = S.shop.freePicks > 0;
     document.querySelector('#screen-shop .shop-head h2').textContent =
-      S.shop.outfitting ? (free ? '🎒 OUTFITTING — FIRST PICK IS FREE' : '🎒 OUTFITTING') : "🏕 THE SMUGGLER'S CAMP";
-    $('#btn-delve').textContent = S.shop.outfitting ? 'ENTER THE DUNGEON →' : 'DELVE DEEPER →';
+      S.shop.outfitting ? (free ? 'OUTFITTING - FIRST PICK IS FREE' : 'OUTFITTING') : "THE SMUGGLER'S CAMP";
+    $('#btn-delve').textContent = S.shop.outfitting ? 'ENTER THE DUNGEON &gt;&gt;' : 'DELVE DEEPER &gt;&gt;';
     $('#shop-gold').textContent = S.gold;
     renderJokers($('#shop-jokerbar'), true);
 
@@ -911,7 +914,7 @@ const UI = (() => {
           : (it.card.kind === 'weapon' ? `Weapon, power ${it.card.rank}. Added to your dungeon deck.` : `Potion, heals ${it.card.rank}. Added to your dungeon deck.`);
         el.innerHTML += `<div class="si-desc">${d}</div>`;
       }
-      el.innerHTML += `<div class="price-tag">${free && !it.sold ? '★ FREE' : '🪙 ' + it.price}</div>`;
+      el.innerHTML += `<div class="price-tag">${free && !it.sold ? 'FREE' : it.price + 'g'}</div>`;
       const btn = document.createElement('button');
       btn.className = 'btn';
       btn.textContent = it.sold ? 'SOLD' : (free ? 'TAKE' : 'BUY');
@@ -921,7 +924,7 @@ const UI = (() => {
       // re-attach tooltip for joker (innerHTML += nuked listeners)
       if (it.type === 'joker') {
         const jEl = el.querySelector('.joker');
-        if (jEl) attachTooltip(jEl, `<div class="tt-name">${it.joker.emoji} ${it.joker.name}</div><div class="tt-desc">${it.joker.desc}</div>`);
+        if (jEl) attachTooltip(jEl, `<div class="tt-name">${PIX.emojiImg(it.joker.emoji, 10, 16)} ${it.joker.name}</div><div class="tt-desc">${it.joker.desc}</div>`);
       }
       wrap.appendChild(el);
     });
@@ -936,11 +939,11 @@ const UI = (() => {
       b.addEventListener('click', fn);
       sv.appendChild(b);
     };
-    mkService('💊 PATCH UP +5 HP', `🪙 8 · ${S.shop.healUses} left`, S.shop.healUses <= 0 || S.gold < 8 || S.hp >= S.maxHp,
+    mkService('PATCH UP +5 HP', `6g - ${S.shop.healUses} left`, S.shop.healUses <= 0 || S.gold < 8 || S.hp >= S.maxHp,
       () => playEvents(E.buyHeal()));
-    mkService('🗑️ REMOVE A CARD', `🪙 ${S.shop.removeCost}`, S.gold < S.shop.removeCost,
+    mkService('REMOVE A CARD', `${S.shop.removeCost}g`, S.gold < S.shop.removeCost,
       () => { SFX.play('click'); modalRemoveCard(); });
-    mkService('🎲 REROLL WARES', S.shop.rerollCost === 0 ? 'FREE' : `🪙 ${S.shop.rerollCost}`, S.gold < S.shop.rerollCost,
+    mkService('REROLL WARES', S.shop.rerollCost === 0 ? 'FREE' : `${S.shop.rerollCost}g`, S.gold < S.shop.rerollCost,
       () => playEvents(E.rerollShop()));
   }
 
@@ -951,13 +954,13 @@ const UI = (() => {
     cont.style.display = save ? '' : 'none';
     if (save) {
       cont.textContent = save.mode === 'classic'
-        ? `▶ CONTINUE — CLASSIC (${save.hp} HP)`
-        : `▶ CONTINUE — ACT ${ROMAN[save.act] || save.act} (${save.hp} HP)`;
+        ? `CONTINUE - CLASSIC (${save.hp} HP)`
+        : `CONTINUE - ACT ${ROMAN[save.act] || save.act} (${save.hp} HP)`;
     }
     const m = E.loadMeta();
     $('#menu-stats').textContent = (m.runs || 0) > 0
-      ? `runs ${m.runs || 0} · wins ${m.wins || 0} · deaths ${m.deaths || 0} · deepest floor ${m.bestFloor || 0}`
-      : 'no runs yet — pick a mode';
+      ? `runs ${m.runs || 0} - wins ${m.wins || 0} - deaths ${m.deaths || 0} - best floor ${m.bestFloor || 0}`
+      : 'no runs yet - pick a mode';
   }
 
   /* restore a saved run onto the right screen */
@@ -981,15 +984,15 @@ const UI = (() => {
     scr.classList.toggle('victory', victory);
     $('#over-title').textContent = victory ? 'ESCAPED!' : 'SLAIN';
     $('#over-sub').textContent = victory
-      ? `${S.campaign.name} conquered — the scoundrel rides into legend`
+      ? `${S.campaign.name} conquered! the scoundrel rides into legend`
       : S.mode === 'classic'
-        ? `Classic Run — the dungeon keeps its dead`
-        : `${S.campaign.name} — dead on floor ${S.floorNum}, Act ${ROMAN[S.act] || S.act}`;
+        ? `Classic Run - the dungeon keeps its dead`
+        : `${S.campaign.name} - dead on floor ${S.floorNum}, Act ${ROMAN[S.act] || S.act}`;
     const fsc = S.finalScore;
     const best = E.localScores().filter(s => s.mode === fsc.mode)[0];
     $('#over-score').innerHTML = `
       <div class="score-panel">
-        <div class="s-label">SCORE — ${fsc.mode.toUpperCase()}</div>
+        <div class="s-label">SCORE - ${fsc.mode.toUpperCase()}</div>
         <div class="s-value">${fsc.score}</div>
         <div class="s-detail">${fsc.detail}${best ? ` · device best ${best.score}` : ''}</div>
       </div>`;

@@ -40,7 +40,7 @@
     </div>
     <div class="title-wrap">
       <div class="title-cards">
-        <div class="tcard tc1">A♠</div><div class="tcard tc2">🃏</div><div class="tcard tc3">K♥</div>
+        <div class="tcard tc1"></div><div class="tcard tc2"></div><div class="tcard tc3"></div>
       </div>
       <h1 class="game-title">SCOUNDREL</h1>
       <p class="tagline">a dungeon crawling card game</p>
@@ -55,17 +55,17 @@
       <div class="mode-card" id="mode-gauntlet">
         <div class="mode-emoji">🃏</div>
         <h3>THE GAUNTLET</h3>
-        <p>3 acts, 3 bosses, Jokers, shops — a deck that grows from 44 to 54.</p>
+        <p>3 acts, 3 bosses, Jokers, shops, and a deck that grows from 44 to 54.</p>
         <div class="camp-diff">THE FULL RIDE</div>
       </div>
     </div>
     <div class="menu-foot">
-      <button class="btn btn-go" id="btn-continue">▶ CONTINUE RUN</button>
+      <button class="btn btn-go" id="btn-continue">CONTINUE RUN</button>
       <button class="btn btn-ghost" id="btn-howto">HOW TO PLAY</button>
-      <button class="btn btn-ghost" id="btn-board">🏆 LEADERBOARD</button>
+      <button class="btn btn-ghost" id="btn-board">LEADERBOARD</button>
       <span id="menu-stats" class="menu-stats"></span>
     </div>
-    <p class="credit">Based on <b>Scoundrel</b> by Zach Gage &amp; Kurt Bieg — an unofficial fan tribute</p>
+    <p class="credit">Based on <b>Scoundrel</b> by Zach Gage &amp; Kurt Bieg - an unofficial fan tribute</p>
   </section>
 
   <!-- ============ GAME ============ -->
@@ -77,17 +77,17 @@
       </div>
       <div class="side-block hp-block">
         <div class="hp-orb" id="hp-orb"><span id="hp-heart"></span><span id="hp-num">20</span><span class="hp-max" id="hp-max">/20</span></div>
-        <div class="shield-chip" id="shield-chip">🛡 <span id="shield-num">0</span></div>
+        <div class="shield-chip" id="shield-chip"><span class="ico-shield"></span> <span id="shield-num">0</span></div>
       </div>
       <div class="side-block gold-block">
-        <div class="gold-chip">🪙 <span id="gold-num">0</span></div>
+        <div class="gold-chip"><span class="ico-coin"></span> <span id="gold-num">0</span></div>
       </div>
-      <button class="btn btn-flee" id="btn-flee">🏃 FLEE ROOM</button>
+      <button class="btn btn-flee" id="btn-flee">FLEE ROOM</button>
       <div class="side-foot">
         <button class="iconbtn" id="btn-howto2" title="How to play">?</button>
         <button class="iconbtn" id="btn-mute" title="Sound on/off">🔊</button>
         <button class="iconbtn" id="btn-fullscreen" title="Fullscreen">⛶</button>
-        <button class="iconbtn" id="btn-abandon" title="Abandon run">✖</button>
+        <button class="iconbtn" id="btn-abandon" title="Abandon run">X</button>
       </div>
     </aside>
 
@@ -97,7 +97,7 @@
       <div id="room-wrap">
         <div id="room-banner"></div>
         <div id="dungeon-row">
-          <div class="pile" id="deck-pile" title="The Dungeon — click to peek at what remains">
+          <div class="pile" id="deck-pile" title="The Dungeon - click to peek at what remains">
             <div class="pile-stack">
               <div class="card-back pb3"></div>
               <div class="card-back pb2"></div>
@@ -107,7 +107,7 @@
             <div class="pile-count" id="deck-num">44</div>
           </div>
           <div id="room"></div>
-          <div class="pile" id="discard-pile" title="Discard — click to browse">
+          <div class="pile" id="discard-pile" title="Discard - click to browse">
             <div class="pile-cards" id="discard-top"><div class="pile-empty"></div></div>
             <div class="pile-label">DISCARD</div>
             <div class="pile-count" id="discard-num">0</div>
@@ -125,14 +125,14 @@
   <!-- ============ SHOP ============ -->
   <section id="screen-shop" class="screen">
     <div class="shop-head">
-      <h2>🏕 THE SMUGGLER'S CAMP</h2>
-      <div class="gold-chip big">🪙 <span id="shop-gold">0</span></div>
+      <h2>THE SMUGGLER'S CAMP</h2>
+      <div class="gold-chip big"><span class="ico-coin"></span> <span id="shop-gold">0</span></div>
     </div>
     <div id="shop-jokerbar"></div>
     <div id="shop-items"></div>
     <div id="shop-services"></div>
     <div class="shop-foot">
-      <button class="btn btn-big btn-go" id="btn-delve">DELVE DEEPER →</button>
+      <button class="btn btn-big btn-go" id="btn-delve">DELVE DEEPER &gt;&gt;</button>
     </div>
   </section>
 
@@ -143,7 +143,7 @@
     <div id="over-score"></div>
     <div id="over-stats" class="over-stats"></div>
     <div class="over-buttons">
-      <button class="btn btn-big" id="btn-submit-score">🏆 SUBMIT SCORE</button>
+      <button class="btn btn-big" id="btn-submit-score">SUBMIT SCORE</button>
       <button class="btn btn-big btn-go" id="btn-again">NEW RUN</button>
     </div>
   </section>

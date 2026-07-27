@@ -40,6 +40,11 @@ body {
 }
 
 .pix { image-rendering: pixelated; vertical-align: middle; }
+/* inline pixel icons inside chips, buttons and headings */
+.ico-coin, .ico-shield { display: inline-flex; align-items: center; }
+.ico-coin img, .ico-shield img { display: block; }
+#modal h2 .h-ico { margin-right: 6px; position: relative; top: -2px; }
+.iconbtn img { display: block; margin: 0 auto; }
 
 /* ---------- dithered felt background ---------- */
 #bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; }

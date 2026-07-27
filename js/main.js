@@ -13,9 +13,9 @@
   $('#btn-howto').addEventListener('click', () => { SFX.play('click'); UI.modalHowTo(); });
   $('#btn-howto2').addEventListener('click', () => { SFX.play('click'); UI.modalHowTo(); });
 
-  // mute — one state, two buttons (menu + game sidebar)
+  // mute — one state, two buttons (menu + game sidebar), pixel-crunched icons
   const muteBtns = [$('#btn-mute'), $('#btn-mute-menu')].filter(Boolean);
-  const syncMute = () => muteBtns.forEach(b => b.textContent = SFX.isMuted() ? '🔇' : '🔊');
+  const syncMute = () => muteBtns.forEach(b => b.innerHTML = PIX.emojiImg(SFX.isMuted() ? '🔇' : '🔊', 12, 20));
   muteBtns.forEach(b => b.addEventListener('click', () => { SFX.toggleMute(); SFX.play('click'); syncMute(); }));
   syncMute();
 
@@ -74,6 +74,9 @@
 
   // pixel-sprite dressing for static chrome
   $('#hp-heart').innerHTML = PIX.emojiImg('❤️', 12, 34);
+  document.querySelectorAll('.ico-coin').forEach(el => el.innerHTML = PIX.emojiImg('🪙', 10, 20));
+  document.querySelectorAll('.ico-shield').forEach(el => el.innerHTML = PIX.emojiImg('🛡️', 10, 18));
+  [$('#btn-fullscreen'), $('#btn-fullscreen-menu')].forEach(b => { if (b) b.innerHTML = PIX.emojiImg('⛶', 12, 20); });
   document.querySelector('.tc1').innerHTML = 'A' + PIX.suitImg('S', 18);
   document.querySelector('.tc2').innerHTML = PIX.emojiImg('🃏', 14, 38);
   document.querySelector('.tc3').innerHTML = 'K' + PIX.suitImg('H', 18);

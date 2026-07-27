@@ -148,17 +148,17 @@ const DATA = (() => {
     {
       id: 'gatekeeper', name: 'THE GATEKEEPER', emoji: '🧌',
       hp: 25, power: 4, gold: 25,
-      trait: 'Enrage — at half HP its Power increases by 2.',
+      trait: 'Enrage - at half HP its Power increases by 2.',
     },
     {
       id: 'plaguedoctor', name: 'THE PLAGUE DOCTOR', emoji: '🐦‍⬛',
       hp: 35, power: 5, gold: 40,
-      trait: 'Miasma — potions only heal HALF during this fight.',
+      trait: 'Miasma - potions only heal HALF during this fight.',
     },
     {
       id: 'scoundrelking', name: 'THE SCOUNDREL KING', emoji: '🎭',
       hp: 48, power: 6, gold: 60,
-      trait: 'Long Live the King — regenerates 3 HP and gains +1 Power every wave.',
+      trait: 'Long Live the King - regenerates 3 HP and gains +1 Power every wave.',
     },
   ];
 

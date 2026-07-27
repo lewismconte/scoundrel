@@ -68,11 +68,11 @@ const E = (() => {
     if (S.mode === 'classic') {
       let s = st.kills * 15;
       if (won) s += 300 + Math.max(0, S.hp) * 20;
-      return { score: s, detail: `${st.kills}/26 slain · ${Math.max(0, S.hp)} HP` };
+      return { score: s, detail: `${st.kills}/26 slain - ${Math.max(0, S.hp)} HP` };
     }
     let s = st.floors * 75 + st.bosses * 250 + st.kills * 8 + st.goldEarned;
     if (won) s += 750 + Math.max(0, S.hp) * 15;
-    return { score: s, detail: `Act ${S.act} · ${st.bosses} boss${st.bosses === 1 ? '' : 'es'} · ${st.kills} slain` };
+    return { score: s, detail: `Act ${S.act} - ${st.bosses} boss${st.bosses === 1 ? '' : 'es'} - ${st.kills} slain` };
   }
   function finishRun(won) {
     const fs = computeScore(won);
