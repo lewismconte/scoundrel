@@ -1,4 +1,12 @@
 {
- "classic": [],
+ "classic": [
+  {
+   "name": "LUI",
+   "score": 105,
+   "mode": "classic",
+   "detail": "7/26 slain · 0 HP",
+   "date": "2026-07-27"
+  }
+ ],
  "gauntlet": []
 }
