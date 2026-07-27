@@ -459,7 +459,13 @@ const UI = (() => {
       : { x: window.innerWidth / 2, y: window.innerHeight / 2.4 };
     let delay = 0;
     const step = 150;
-    const later = fn => { setTimeout(fn, delay); delay += step; };
+    /* Juice is staggered over seconds, so a player who abandons and starts a new
+       run mid-sequence can have the old run's callbacks land in the new one. Every
+       deferred callback belongs to the run that queued it and is dropped otherwise. */
+    const tok = E.runToken();
+    const alive = () => E.runToken() === tok;
+    const later = fn => { setTimeout(() => { if (alive()) fn(); }, delay); delay += step; };
+    const after = (ms, fn) => setTimeout(() => { if (alive()) fn(); }, ms);
 
     evs.forEach(ev => {
       switch (ev.type) {
@@ -527,7 +533,7 @@ const UI = (() => {
         case 'floorClear': later(() => {
           SFX.play('fanfare');
           floatCenter('FLOOR CLEARED! +' + ev.bonus + 'g', 'gold big');
-          setTimeout(() => { if (!S.over) E.openShop(); }, 1500);
+          after(1500, () => { if (!S.over) E.openShop(); });
         }); break;
         case 'bossAttack': later(() => {
           floatCenter('THE BOSS HITS FOR ' + ev.amt + '!', 'hurt');
@@ -547,9 +553,9 @@ const UI = (() => {
           shake(true);
           floatCenter(ev.boss.name + ' FALLS!', 'gold big');
         }); break;
-        case 'reward': later(() => setTimeout(() => modalBossReward(ev), 1200)); break;
-        case 'death': later(() => { SFX.play('die'); shake(true); setTimeout(() => gameOver(false), 1100); }); break;
-        case 'victory': later(() => setTimeout(() => gameOver(true), 1500)); break;
+        case 'reward': later(() => after(1200, () => modalBossReward(ev))); break;
+        case 'death': later(() => { SFX.play('die'); shake(true); after(1100, () => gameOver(false)); }); break;
+        case 'victory': later(() => after(1500, () => gameOver(true))); break;
         case 'cant': later(() => SFX.play('error')); break;
         case 'slotsFull': later(() => { SFX.play('error'); floatCenter('JOKER SLOTS FULL!', 'info'); }); break;
         case 'bought': later(() => { SFX.play('buy'); renderShop(); }); break;
@@ -651,11 +657,20 @@ const UI = (() => {
   }
 
   /* ============================ modals ============================ */
-  function openModal(html) {
+  /* A "sticky" modal owns a decision the run cannot continue without (the boss
+     reward). Escape and stray clicks must not dismiss it — only the code that
+     consumes the decision may, by passing force. */
+  function openModal(html, sticky) {
     $('#modal').innerHTML = html;
+    $('#modal').dataset.sticky = sticky ? '1' : '';
     $('#modal-wrap').classList.remove('hidden');
   }
-  function closeModal() { $('#modal-wrap').classList.add('hidden'); hideTip(); }
+  function closeModal(force) {
+    if (!force && $('#modal').dataset.sticky === '1') { SFX.play('error'); return; }
+    $('#modal').dataset.sticky = '';
+    $('#modal-wrap').classList.add('hidden');
+    hideTip();
+  }
 
   // pixel icon for modal headings
   const hIcon = e => PIX.emojiImg(e, 12, 26, 'h-ico');
@@ -736,25 +751,26 @@ const UI = (() => {
       <h2>SPOILS OF WAR</h2>
       <p>Choose a Joker${S.jokers.length >= S.jokerSlots ? ' <b>(slots full!)</b>' : ''} - or take the gold.</p>
       <div class="reward-row" id="reward-row"></div>
-      <div class="modal-foot"><button class="btn btn-go" id="reward-gold">TAKE ${ev.gold} GOLD</button></div>`);
+      <div class="modal-foot"><button class="btn btn-go" id="reward-gold">TAKE ${ev.gold} GOLD</button></div>`, true);
     const row = $('#reward-row');
+    // the reward is only banked if the engine still had one to give — never
+    // resurrect an abandoned run by opening its camp regardless
+    const take = id => {
+      if (!S.pendingReward) return;
+      playEvents(E.pickReward(id));
+      closeModal(true);
+      E.openShop();
+    };
     ev.jokers.forEach(j => {
       const el = jokerEl(j);
       el.addEventListener('click', () => {
-        if (S.jokers.length >= S.jokerSlots) { SFX.play('error'); floatCenter('Joker slots full!', 'info'); return; }
+        if (S.jokers.length >= S.jokerSlots) { SFX.play('error'); floatCenter('JOKER SLOTS FULL!', 'info'); return; }
         SFX.play('joker');
-        playEvents(E.pickReward(j.id));
-        closeModal();
-        E.openShop();
+        take(j.id);
       });
       row.appendChild(el);
     });
-    $('#reward-gold').addEventListener('click', () => {
-      SFX.play('coin');
-      playEvents(E.pickReward(null));
-      closeModal();
-      E.openShop();
-    });
+    $('#reward-gold').addEventListener('click', () => { SFX.play('coin'); take(null); });
   }
 
   function modalAbandon() {
@@ -940,7 +956,8 @@ const UI = (() => {
       b.addEventListener('click', fn);
       sv.appendChild(b);
     };
-    mkService('PATCH UP +5 HP', `6g - ${S.shop.healUses} left`, S.shop.healUses <= 0 || S.gold < 8 || S.hp >= S.maxHp,
+    mkService('PATCH UP +5 HP', `${E.HEAL_COST}g - ${S.shop.healUses} left`,
+      S.shop.healUses <= 0 || S.gold < E.HEAL_COST || S.hp >= S.maxHp,
       () => playEvents(E.buyHeal()));
     mkService('REMOVE A CARD', `${S.shop.removeCost}g`, S.gold < S.shop.removeCost,
       () => { SFX.play('click'); modalRemoveCard(); });
@@ -981,6 +998,7 @@ const UI = (() => {
   }
 
   function gameOver(victory) {
+    if (!S.finalScore) return; // the run that died has already been replaced
     const scr = $('#screen-over');
     scr.classList.toggle('victory', victory);
     $('#over-title').textContent = victory ? 'ESCAPED!' : 'SLAIN';
@@ -995,7 +1013,7 @@ const UI = (() => {
       <div class="score-panel">
         <div class="s-label">SCORE - ${fsc.mode.toUpperCase()}</div>
         <div class="s-value">${fsc.score}</div>
-        <div class="s-detail">${fsc.detail}${best ? ` · device best ${best.score}` : ''}</div>
+        <div class="s-detail">${fsc.detail}${best ? ` - device best ${best.score}` : ''}</div>
       </div>`;
     const st = S.stats;
     $('#over-stats').innerHTML = `

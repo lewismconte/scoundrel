@@ -307,7 +307,6 @@ body {
 .mode-card h3 { font-family: var(--font-display); font-weight: 400; font-size: 27px; line-height: 1; margin: 8px 0 7px; color: var(--gold); }
 .mode-card p { font-size: 8.5px; opacity: .85; line-height: 1.6; }
 .mode-card .camp-diff { margin-top: 10px; font-size: 8px; font-weight: 700; letter-spacing: 2px; opacity: .55; }
-.mode-card.selected { border-color: var(--gold); }
 
 
 .menu-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
@@ -561,7 +560,9 @@ body {
 .deck-grid .card-mini:hover { outline: 3px solid var(--hurt); }
 .deck-grid.readonly .card-mini { cursor: default; }
 .deck-grid.readonly .card-mini:hover { outline: none; transform: none; }
-.reward-row { display: flex; gap: 16px; justify-content: center; margin: 10px 0; }
+/* wraps because the deck-grows reveal puts five cards here — a no-wrap row
+   overflows a phone modal on both sides and the left card becomes unreachable */
+.reward-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin: 10px 0; }
 .reward-row .joker { cursor: pointer; }
 .reward-row .joker:hover { outline: 3px solid var(--gold); transform: translateY(-6px) scale(1.05); }
 
@@ -709,6 +710,12 @@ body {
   .game-title { font-size: 56px; letter-spacing: 2px; }
   #mode-row { flex-direction: column; gap: 14px; }
   .mode-card { width: 264px; padding: 16px 14px; }
+  /* the menu scrolls on phones, so pin the icons and start the content below
+     them — absolute icons would scroll away and sit on top of the title cards */
+  #menu-icons { position: fixed; top: 10px; right: 10px; }
+  #screen-menu { padding-top: 58px; }
+  .title-cards { gap: 8px; }
+  .tcard { width: 52px; height: 72px; font-size: 23px; }
 
   /* --- shop --- */
   .shop-head { flex-direction: column; gap: 8px; }

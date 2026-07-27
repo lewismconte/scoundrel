@@ -38,15 +38,19 @@ const E = (() => {
   }
 
   /* ---------- run save / resume (device localStorage) ---------- */
+  // Bump whenever the shape of S changes incompatibly. v2 dropped the campaign
+  // system and added the grew2/grew3 deck-growth flags: a v1 save resumed by this
+  // build would re-add cards it already holds, so old saves are simply retired.
+  const SAVE_VER = 2;
   function saveNow() {
     if (S.over || !S.mode) return;
-    try { localStorage.setItem('scoundrel_save', JSON.stringify(S)); } catch (e) {}
+    try { localStorage.setItem('scoundrel_save', JSON.stringify({ ...S, v: SAVE_VER })); } catch (e) {}
   }
   function clearSave() { try { localStorage.removeItem('scoundrel_save'); } catch (e) {} }
   function savedRun() {
     try {
       const d = JSON.parse(localStorage.getItem('scoundrel_save'));
-      return (d && d.mode && !d.over) ? d : null;
+      return (d && d.v === SAVE_VER && d.mode && !d.over) ? d : null;
     } catch (e) { return null; }
   }
   function resume() {
@@ -59,8 +63,15 @@ const E = (() => {
     });
     DATA.ensureIdAbove(maxId);
     Object.assign(S, d);
+    delete S.v; // the version tag lives in storage, not in run state
+    runToken++; // stale timers from a previous run must not fire into this one
     return true;
   }
+
+  /* Every deferred bit of juice in ui.js is scheduled against the run that was
+     live when it was queued. Bumped on every run start/resume so a timer that
+     outlives its run can detect that and bail instead of mutating the new one. */
+  let runToken = 0;
 
   /* ---------- arcade scoring ---------- */
   function computeScore(won) {
@@ -110,7 +121,7 @@ const E = (() => {
 
   /* ---------- derived values ---------- */
   function monsterBonus() {
-    let b = (S.campaign.monsterBonus || 0) + (S.act >= 3 ? 1 : 0);
+    let b = (S.act >= 3 ? 1 : 0);
     if (S.floorMod === 'bloodmoon') b += 1;
     return b;
   }
@@ -151,6 +162,7 @@ const E = (() => {
      RUN LIFECYCLE
      ============================================================ */
   function newRun() {
+    runToken++;
     Object.assign(S, {
       mode: 'gauntlet',
       campaign: { name: 'The Gauntlet' },
@@ -165,9 +177,9 @@ const E = (() => {
       mirrorUsed: false, angelUsed: false,
       floorMod: null,
       boss: null, actionsLeft: 0, bossDeck: [], bossDiscard: [],
-      shop: null,
+      shop: null, pendingReward: null,
       stats: { kills: 0, bareKills: 0, dmgTaken: 0, healed: 0, goldEarned: 0, floors: 0, bosses: 0, fled: 0 },
-      over: false,
+      over: false, finalScore: null,
     });
     saveMeta({ runs: (loadMeta().runs || 0) + 1 });
     openShop(true); // outfitting: first pick is free, then delve to floor 1
@@ -175,9 +187,10 @@ const E = (() => {
 
   /* CLASSIC — the original solo game: one deck, no bosses, no shop, no jokers */
   function newClassicRun() {
+    runToken++;
     Object.assign(S, {
       mode: 'classic',
-      campaign: { id: 'classicmode', name: 'Classic Run', hp: 20, gold: 0, pool: 'classic', startJokers: 0, monsterBonus: 0 },
+      campaign: { name: 'Classic Run' },
       act: 1, stage: 0, floorNum: 1,
       maxHp: 20, hp: 20, shield: 0, gold: 0,
       weapon: null,
@@ -189,7 +202,7 @@ const E = (() => {
       boss: null, actionsLeft: 0, bossDeck: [], bossDiscard: [],
       shop: null, pendingReward: null,
       stats: { kills: 0, bareKills: 0, dmgTaken: 0, healed: 0, goldEarned: 0, floors: 0, bosses: 0, fled: 0 },
-      over: false,
+      over: false, finalScore: null,
     });
     saveMeta({ runs: (loadMeta().runs || 0) + 1 });
     S.deck = shuffle(DATA.classicPool().map(DATA.cloneCard));
@@ -228,7 +241,7 @@ const E = (() => {
     saveNow();
     UI.showScreen('game');
     UI.renderAll(true);
-    if (grew) UI.modalDeckGrows(grew, S.act);
+    if (grew && grew.length) UI.modalDeckGrows(grew, S.act);
   }
 
   function dealRoom() {
@@ -587,7 +600,10 @@ const E = (() => {
   /* ============================================================
      SHOP
      ============================================================ */
+  const HEAL_COST = 6; // the camp's Patch Up price — the UI reads this, never its own copy
+
   function openShop(outfitting) {
+    if (S.shop) return; // already in the camp — a stale timer must not reroll it
     let piggy = 0;
     if (hasJoker('piggy') && !outfitting) {
       piggy = Math.min(5, Math.floor(S.gold / 10));
@@ -605,7 +621,7 @@ const E = (() => {
     saveNow();
     UI.showScreen('shop');
     UI.renderShop();
-    if (piggy > 0) UI.floatCenter('🐷 +' + piggy + ' interest', 'gold');
+    if (piggy > 0) UI.floatCenter('+' + piggy + ' INTEREST', 'gold');
   }
 
   function genShopItems() {
@@ -622,6 +638,7 @@ const E = (() => {
   }
 
   function buyItem(i) {
+    if (!S.shop) return drain(); // camp already left — the click lost the race
     const it = S.shop.items[i];
     const free = S.shop.freePicks > 0;
     if (!it || it.sold || (!free && S.gold < it.price)) { emit('cant'); return drain(); }
@@ -636,14 +653,16 @@ const E = (() => {
   }
 
   function buyHeal() {
-    if (S.shop.healUses <= 0 || S.gold < 6 || S.hp >= S.maxHp) { emit('cant'); return drain(); }
-    S.gold -= 6;
+    if (!S.shop) return drain();
+    if (S.shop.healUses <= 0 || S.gold < HEAL_COST || S.hp >= S.maxHp) { emit('cant'); return drain(); }
+    S.gold -= HEAL_COST;
     S.shop.healUses--;
     heal(5);
     return drain();
   }
 
   function rerollShop() {
+    if (!S.shop) return drain();
     if (S.gold < S.shop.rerollCost) { emit('cant'); return drain(); }
     S.gold -= S.shop.rerollCost;
     S.shop.rerolls++;
@@ -654,6 +673,7 @@ const E = (() => {
   }
 
   function removeCardFromPool(cardId) {
+    if (!S.shop) return drain();
     if (S.gold < S.shop.removeCost) { emit('cant'); return drain(); }
     const i = S.pool.findIndex(c => c.id === cardId);
     if (i < 0) return drain();
@@ -674,6 +694,7 @@ const E = (() => {
   function leaveShop() {
     if (!S.shop) return; // already left (double-click) — never advance twice
     S.shop = null;
+    UI.closeModal(true); // a camp modal (remove-a-card) must not outlive the camp
     if (S.floorNum === 0) { startFloor(); return; } // leaving the outfitting camp → floor 1
     if (S.stage === 0) { S.stage = 1; startFloor(); }
     else if (S.stage === 1) { S.stage = 2; startBoss(); }
@@ -686,6 +707,7 @@ const E = (() => {
     openShop, buyItem, buyHeal, rerollShop, removeCardFromPool, sellJoker, leaveShop,
     hasJoker, effRank, weaponPower, canUseWeapon, previewDamage, potionHeal,
     strikeDamage, canFlee, roomSize, monsterBonus,
+    HEAL_COST, runToken: () => runToken,
     drain, loadMeta,
     savedRun, resume, clearSave, localScores,
   };
