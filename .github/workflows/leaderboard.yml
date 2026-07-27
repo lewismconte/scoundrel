@@ -1,0 +1,86 @@
+# Arcade leaderboard with no server: players submit scores as GitHub issues
+# titled "[SCORE] ...". This action validates the JSON block in the issue body,
+# merges it into leaderboard.json (top 50 per mode), commits, and closes the
+# issue. GitHub Pages then serves the updated board.
+name: leaderboard
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: leaderboard
+  cancel-in-progress: false
+
+jobs:
+  record-score:
+    if: startsWith(github.event.issue.title, '[SCORE]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Parse and merge score
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue = context.payload.issue;
+            const close = async (msg) => {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: msg });
+              await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: 'closed' });
+            };
+
+            let entry = null;
+            const m = (issue.body || '').match(/```json\s*([\s\S]*?)```/);
+            try { entry = JSON.parse(m[1]); } catch (e) {}
+
+            const valid = entry
+              && typeof entry.score === 'number' && isFinite(entry.score)
+              && entry.score >= 0 && entry.score <= 99999
+              && typeof entry.name === 'string'
+              && ['classic', 'gauntlet'].includes(entry.mode);
+
+            if (!valid) {
+              core.setOutput('valid', 'no');
+              await close('⚠️ This score submission could not be parsed, so it was not recorded. Submit scores from the game itself: https://lewismconte.github.io/scoundrel/');
+              return;
+            }
+
+            const rec = {
+              name: (entry.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()) || 'AAA',
+              score: Math.floor(entry.score),
+              mode: entry.mode,
+              detail: String(entry.detail || '').replace(/[<>&`]/g, '').slice(0, 60),
+              date: new Date().toISOString().slice(0, 10),
+            };
+
+            let board = { classic: [], gauntlet: [] };
+            try { board = JSON.parse(fs.readFileSync('leaderboard.json', 'utf8')); } catch (e) {}
+            board[rec.mode] = (board[rec.mode] || []).concat([rec])
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 50);
+            fs.writeFileSync('leaderboard.json', JSON.stringify(board, null, 1) + '\n');
+
+            const rank = board[rec.mode].findIndex(r => r === rec) + 1;
+            core.setOutput('valid', 'yes');
+            await close(rank > 0
+              ? `🃏 **Score recorded!** ${rec.name} — ${rec.score} (${rec.mode}), rank **#${rank}**. The board updates at https://lewismconte.github.io/scoundrel/ in a minute or two.`
+              : `🃏 Score received (${rec.score}) but it didn't crack the top 50 — the dungeon is merciless. Try again!`);
+
+      - name: Commit board
+        if: steps.parse.outputs.valid == 'yes'
+        env:
+          ISSUE_NUM: ${{ github.event.issue.number }}
+        run: |
+          git config user.name "scoundrel-arcade[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git add leaderboard.json
+          git diff --cached --quiet || git commit -m "leaderboard: score from issue #$ISSUE_NUM"
+          git push

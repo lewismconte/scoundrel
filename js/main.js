@@ -47,8 +47,20 @@
   // --- shop ---
   $('#btn-delve').addEventListener('click', () => { SFX.play('click'); E.leaveShop(); });
 
+  // --- menu: modes, continue, leaderboard ---
+  $('#mode-classic').addEventListener('click', () => { SFX.unlock(); SFX.play('joker'); E.newClassicRun(); });
+  $('#mode-gauntlet').addEventListener('click', () => {
+    SFX.unlock(); SFX.play('click');
+    const row = $('#campaign-row');
+    row.classList.toggle('hidden');
+    $('#mode-gauntlet').classList.toggle('selected', !row.classList.contains('hidden'));
+  });
+  $('#btn-continue').addEventListener('click', () => { SFX.unlock(); SFX.play('deal'); UI.resumeRun(); });
+  $('#btn-board').addEventListener('click', () => { SFX.play('click'); UI.modalLeaderboard(); });
+
   // --- game over ---
   $('#btn-again').addEventListener('click', () => { SFX.play('click'); UI.renderMenu(); UI.showScreen('menu'); });
+  $('#btn-submit-score').addEventListener('click', () => { SFX.play('click'); UI.modalSubmitScore(); });
 
   // click anywhere else closes monster choosers
   document.addEventListener('click', e => {

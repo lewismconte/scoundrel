@@ -7,6 +7,8 @@ const DATA = (() => {
 
   let _cid = 0;
   const newId = () => 'c' + (++_cid);
+  // resumed saves carry old card ids — keep the counter ahead of them
+  const ensureIdAbove = n => { if (n > _cid) _cid = n; };
 
   const SUIT_SYM = { S: '♠', C: '♣', H: '♥', D: '♦', X: '🃏' };
   const RANK_SYM = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
@@ -139,6 +141,7 @@ const DATA = (() => {
     { id: 'key',       name: 'Skeleton Key',    emoji: '🗝️', cost: 12, desc: 'Your first shop reroll is free, every shop.' },
     { id: 'cloak',     name: 'Phantom Cloak',   emoji: '👻', cost: 14, desc: 'Heal 2 whenever you flee a room.' },
     { id: 'crown',     name: 'Crown of Greed',  emoji: '👑', cost: 16, desc: 'Floor-clear bonus: +10 extra gold.' },
+    { id: 'catnap',    name: 'Cat Nap',         emoji: '😴', cost: 20, desc: 'Heal 1 every time you clear a room.' },
   ];
   const jokerById = id => JOKERS.find(j => j.id === id);
 
@@ -174,8 +177,8 @@ const DATA = (() => {
   /* ---------------- CAMPAIGNS ---------------- */
   const CAMPAIGNS = [
     {
-      id: 'classic', name: 'The Classic Crawl', emoji: '🏰', diff: 'BALANCED',
-      desc: 'The original 44-card dungeon. 20 HP. Build your legend from nothing.',
+      id: 'classic', name: 'The Long Road', emoji: '🏰', diff: 'BALANCED',
+      desc: 'The standard 44-card dungeon. 20 HP. Build your legend from nothing.',
       hp: 20, gold: 0, pool: 'classic', startJokers: 0, monsterBonus: 0,
     },
     {
@@ -215,6 +218,6 @@ const DATA = (() => {
     SUIT_SYM, rankLabel, MONSTERS, WEAPONS, POTIONS, ALLIES,
     JOKERS, jokerById, BOSSES, FLOORMODS, modById, CAMPAIGNS, campaignById,
     makeCard, cloneCard, cardName, cardEmoji, allyDef,
-    classicPool, full54Pool, randomShopCard, newId,
+    classicPool, full54Pool, randomShopCard, newId, ensureIdAbove,
   };
 })();

@@ -24,7 +24,7 @@ const E = (() => {
   /* ---------- event queue (drained by UI) ---------- */
   let evq = [];
   const emit = (type, data = {}) => evq.push({ type, ...data });
-  const drain = () => { const q = evq; evq = []; return q; };
+  const drain = () => { const q = evq; evq = []; saveNow(); return q; };
 
   /* ---------- meta stats (localStorage) ---------- */
   function loadMeta() {
@@ -35,6 +35,59 @@ const E = (() => {
     Object.assign(m, patch);
     localStorage.setItem('scoundrel_meta', JSON.stringify(m));
     return m;
+  }
+
+  /* ---------- run save / resume (device localStorage) ---------- */
+  function saveNow() {
+    if (S.over || !S.mode) return;
+    try { localStorage.setItem('scoundrel_save', JSON.stringify(S)); } catch (e) {}
+  }
+  function clearSave() { try { localStorage.removeItem('scoundrel_save'); } catch (e) {} }
+  function savedRun() {
+    try {
+      const d = JSON.parse(localStorage.getItem('scoundrel_save'));
+      return (d && d.mode && !d.over) ? d : null;
+    } catch (e) { return null; }
+  }
+  function resume() {
+    const d = savedRun();
+    if (!d) return false;
+    let maxId = 0; // keep new card ids ahead of the saved ones
+    (JSON.stringify(d).match(/"c(\d+)"/g) || []).forEach(s => {
+      const n = parseInt(s.slice(2), 10);
+      if (n > maxId) maxId = n;
+    });
+    DATA.ensureIdAbove(maxId);
+    Object.assign(S, d);
+    return true;
+  }
+
+  /* ---------- arcade scoring ---------- */
+  function computeScore(won) {
+    const st = S.stats;
+    if (S.mode === 'classic') {
+      let s = st.kills * 15;
+      if (won) s += 300 + Math.max(0, S.hp) * 20;
+      return { score: s, detail: `${st.kills}/26 slain · ${Math.max(0, S.hp)} HP` };
+    }
+    let s = st.floors * 75 + st.bosses * 250 + st.kills * 8 + st.goldEarned;
+    if (won) s += 750 + Math.max(0, S.hp) * 15;
+    return { score: s, detail: `Act ${S.act} · ${st.bosses} boss${st.bosses === 1 ? '' : 'es'} · ${st.kills} slain` };
+  }
+  function finishRun(won) {
+    const fs = computeScore(won);
+    S.finalScore = { ...fs, mode: S.mode, won };
+    clearSave();
+    try {
+      const key = 'scoundrel_local_scores';
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      list.push({ score: fs.score, mode: S.mode, detail: fs.detail, date: new Date().toISOString().slice(0, 10) });
+      list.sort((a, b) => b.score - a.score);
+      localStorage.setItem(key, JSON.stringify(list.slice(0, 10)));
+    } catch (e) {}
+  }
+  function localScores() {
+    try { return JSON.parse(localStorage.getItem('scoundrel_local_scores') || '[]'); } catch (e) { return []; }
   }
 
   /* ---------- joker helpers ---------- */
@@ -100,6 +153,7 @@ const E = (() => {
   function newRun(campId) {
     const camp = DATA.campaignById(campId);
     Object.assign(S, {
+      mode: 'gauntlet',
       campaign: camp,
       act: 1, stage: 0, floorNum: 0,
       maxHp: camp.hp, hp: camp.hp, shield: 0, gold: camp.gold,
@@ -120,8 +174,33 @@ const E = (() => {
       const opts = unownedJokers();
       addJoker(opts[Math.floor(Math.random() * opts.length)].id);
     }
-    startFloor();
+    openShop(true); // outfitting: first pick is free, then delve to floor 1
+  }
+
+  /* CLASSIC — the original solo game: one deck, no bosses, no shop, no jokers */
+  function newClassicRun() {
+    Object.assign(S, {
+      mode: 'classic',
+      campaign: { id: 'classicmode', name: 'Classic Run', hp: 20, gold: 0, pool: 'classic', startJokers: 0, monsterBonus: 0 },
+      act: 1, stage: 0, floorNum: 1,
+      maxHp: 20, hp: 20, shield: 0, gold: 0,
+      weapon: null,
+      jokers: [], jokerSlots: 0,
+      pool: [], deck: [], room: [], discard: [],
+      fledLast: false, potionsThisRoom: 0, roomResolved: 0,
+      mirrorUsed: false, angelUsed: false,
+      floorMod: null,
+      boss: null, actionsLeft: 0, bossDeck: [], bossDiscard: [],
+      shop: null, pendingReward: null,
+      stats: { kills: 0, bareKills: 0, dmgTaken: 0, healed: 0, goldEarned: 0, floors: 0, bosses: 0, fled: 0 },
+      over: false,
+    });
+    saveMeta({ runs: (loadMeta().runs || 0) + 1 });
+    S.deck = shuffle(DATA.classicPool().map(DATA.cloneCard));
+    dealRoom();
+    saveNow();
     UI.showScreen('game');
+    UI.renderAll(true);
   }
 
   function startFloor() {
@@ -143,6 +222,7 @@ const E = (() => {
     if (hasJoker('quarter')) S.shield = Math.max(S.shield, 5);
     dealRoom();
     emit('floorStart');
+    saveNow();
     UI.showScreen('game');
     UI.renderAll(true);
   }
@@ -206,6 +286,7 @@ const E = (() => {
 
   function die() {
     S.over = true;
+    finishRun(false);
     const m = loadMeta();
     saveMeta({ deaths: (m.deaths || 0) + 1, bestFloor: Math.max(m.bestFloor || 0, S.floorNum) });
     emit('death');
@@ -349,6 +430,7 @@ const E = (() => {
     }
     if (S.room.length <= 1 && S.deck.length > 0) {
       S.fledLast = false; // a room was survived honestly
+      if (hasJoker('catnap')) heal(1);
       dealRoom();
       emit('newRoom');
     } else if (S.deck.length === 0 && S.room.length === 0) {
@@ -372,8 +454,11 @@ const E = (() => {
     S.stats.floors++;
     const m = loadMeta();
     saveMeta({ bestFloor: Math.max(m.bestFloor || 0, S.floorNum) });
+    if (hasJoker('catnap')) heal(1);
+    if (S.mode === 'classic') { victory(); return; } // classic: clear the deck, win the run
     let bonus = 10 + (hasJoker('crown') ? 10 : 0);
     addGold(bonus);
+    heal(6); // rest by the fire before the camp
     emit('floorClear', { bonus });
   }
 
@@ -399,6 +484,7 @@ const E = (() => {
     dealBossRoom();
     S.actionsLeft = 3;
     emit('bossStart', { boss: def });
+    saveNow();
     UI.showScreen('game');
     UI.renderAll(true);
     UI.bossSplash(def);
@@ -488,6 +574,7 @@ const E = (() => {
 
   function victory() {
     S.over = true;
+    finishRun(true);
     const m = loadMeta();
     saveMeta({ wins: (m.wins || 0) + 1, bestFloor: Math.max(m.bestFloor || 0, S.floorNum) });
     emit('victory');
@@ -496,19 +583,22 @@ const E = (() => {
   /* ============================================================
      SHOP
      ============================================================ */
-  function openShop() {
+  function openShop(outfitting) {
     let piggy = 0;
-    if (hasJoker('piggy')) {
+    if (hasJoker('piggy') && !outfitting) {
       piggy = Math.min(5, Math.floor(S.gold / 10));
       addGold(piggy);
     }
     S.shop = {
       items: genShopItems(),
-      healUses: 3,
+      healUses: 4,
       rerolls: 0,
       rerollCost: hasJoker('key') ? 0 : 5,
       removeCost: 12,
+      freePicks: outfitting ? 1 : 0,
+      outfitting: !!outfitting,
     };
+    saveNow();
     UI.showScreen('shop');
     UI.renderShop();
     if (piggy > 0) UI.floatCenter('🐷 +' + piggy + ' interest', 'gold');
@@ -529,19 +619,21 @@ const E = (() => {
 
   function buyItem(i) {
     const it = S.shop.items[i];
-    if (!it || it.sold || S.gold < it.price) { emit('cant'); return drain(); }
+    const free = S.shop.freePicks > 0;
+    if (!it || it.sold || (!free && S.gold < it.price)) { emit('cant'); return drain(); }
     if (it.type === 'joker' && S.jokers.length >= S.jokerSlots) { emit('slotsFull'); return drain(); }
-    S.gold -= it.price;
+    if (free) S.shop.freePicks--;
+    else S.gold -= it.price;
     it.sold = true;
     if (it.type === 'joker') addJoker(it.joker.id);
     else S.pool.push(it.card);
-    emit('bought', { item: it });
+    emit('bought', { item: it, free });
     return drain();
   }
 
   function buyHeal() {
-    if (S.shop.healUses <= 0 || S.gold < 8 || S.hp >= S.maxHp) { emit('cant'); return drain(); }
-    S.gold -= 8;
+    if (S.shop.healUses <= 0 || S.gold < 6 || S.hp >= S.maxHp) { emit('cant'); return drain(); }
+    S.gold -= 6;
     S.shop.healUses--;
     heal(5);
     return drain();
@@ -577,6 +669,7 @@ const E = (() => {
 
   function leaveShop() {
     S.shop = null;
+    if (S.floorNum === 0) { startFloor(); return; } // leaving the outfitting camp → floor 1
     if (S.stage === 0) { S.stage = 1; startFloor(); }
     else if (S.stage === 1) { S.stage = 2; startBoss(); }
     else { S.act++; S.stage = 0; startFloor(); }
@@ -584,10 +677,11 @@ const E = (() => {
 
   /* ---------- public API ---------- */
   return {
-    newRun, resolveCard, flee, strikeBoss, pickReward,
+    newRun, newClassicRun, resolveCard, flee, strikeBoss, pickReward,
     openShop, buyItem, buyHeal, rerollShop, removeCardFromPool, sellJoker, leaveShop,
     hasJoker, effRank, weaponPower, canUseWeapon, previewDamage, potionHeal,
     strikeDamage, canFlee, roomSize, monsterBonus,
     drain, loadMeta,
+    savedRun, resume, clearSave, localScores,
   };
 })();

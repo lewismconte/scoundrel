@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SCOUNDREL — a knavish roguelike</title>
-<meta name="description" content="A pixel-art, Balatro-feel roguelike deckbuilder built on the solo card game Scoundrel. 22 Jokers, 3 acts with boss fights, all 54 cards, a shop and deckbuilding. Play free in your browser.">
+<title>SCOUNDREL — dungeon crawling card game</title>
+<meta name="description" content="A pixel-art dungeon crawling card game built on the solo classic Scoundrel. Classic scored runs, or the 3-act Gauntlet with Jokers, bosses and deckbuilding. Play free in your browser.">
 <meta name="theme-color" content="#16281f">
 
 <!-- social preview (Open Graph + Twitter) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://lewismconte.github.io/scoundrel/">
-<meta property="og:title" content="SCOUNDREL — a knavish roguelike">
-<meta property="og:description" content="A pixel-art, Balatro-feel roguelike deckbuilder. 22 Jokers, 3 acts + bosses, all 54 cards. Play free in your browser.">
+<meta property="og:title" content="SCOUNDREL — dungeon crawling card game">
+<meta property="og:description" content="A pixel-art dungeon crawling card game. Classic scored runs, or the Gauntlet: 3 acts, bosses, Jokers and deckbuilding. Play free in your browser.">
 <meta property="og:image" content="https://lewismconte.github.io/scoundrel/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="SCOUNDREL — pixel-art title with three fanned playing cards on a green felt table.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SCOUNDREL — a knavish roguelike">
-<meta name="twitter:description" content="A pixel-art, Balatro-feel roguelike deckbuilder. Play free in your browser.">
+<meta name="twitter:title" content="SCOUNDREL — dungeon crawling card game">
+<meta name="twitter:description" content="A pixel-art dungeon crawling card game. Play free in your browser.">
 <meta name="twitter:image" content="https://lewismconte.github.io/scoundrel/og.png">
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🃏</text></svg>">
@@ -39,11 +39,27 @@
         <div class="tcard tc1">A♠</div><div class="tcard tc2">🃏</div><div class="tcard tc3">K♥</div>
       </div>
       <h1 class="game-title">SCOUNDREL</h1>
-      <p class="tagline">a knavish card-crawling roguelike</p>
+      <p class="tagline">a dungeon crawling card game</p>
     </div>
-    <div id="campaign-row"></div>
+    <div id="mode-row">
+      <div class="mode-card" id="mode-classic">
+        <div class="mode-emoji">🗡️</div>
+        <h3>CLASSIC RUN</h3>
+        <p>The original solo dungeon. One deck, no shops, no mercy. Scored for the leaderboard.</p>
+        <div class="camp-diff">PURE SCOUNDREL</div>
+      </div>
+      <div class="mode-card" id="mode-gauntlet">
+        <div class="mode-emoji">🃏</div>
+        <h3>THE GAUNTLET</h3>
+        <p>Three acts, three bosses. Jokers, shops, deckbuilding and all 54 cards.</p>
+        <div class="camp-diff">THE FULL RIDE</div>
+      </div>
+    </div>
+    <div id="campaign-row" class="hidden"></div>
     <div class="menu-foot">
+      <button class="btn btn-go" id="btn-continue">▶ CONTINUE RUN</button>
       <button class="btn btn-ghost" id="btn-howto">HOW TO PLAY</button>
+      <button class="btn btn-ghost" id="btn-board">🏆 LEADERBOARD</button>
       <span id="menu-stats" class="menu-stats"></span>
     </div>
     <p class="credit">Based on <b>Scoundrel</b> by Zach Gage &amp; Kurt Bieg — an unofficial fan tribute</p>
@@ -121,8 +137,12 @@
   <section id="screen-over" class="screen">
     <h1 id="over-title" class="game-title">SLAIN</h1>
     <p id="over-sub" class="tagline"></p>
+    <div id="over-score"></div>
     <div id="over-stats" class="over-stats"></div>
-    <button class="btn btn-big btn-go" id="btn-again">NEW RUN</button>
+    <div class="over-buttons">
+      <button class="btn btn-big" id="btn-submit-score">🏆 SUBMIT SCORE</button>
+      <button class="btn btn-big btn-go" id="btn-again">NEW RUN</button>
+    </div>
   </section>
 
 </div>

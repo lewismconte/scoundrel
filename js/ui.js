@@ -141,14 +141,18 @@ const UI = (() => {
     if (freshDeal) knownIds = new Set();
     renderSidebar();
     renderPiles();
-    renderJokers();
+    $('#jokerbar').style.display = S.mode === 'classic' ? 'none' : '';
+    if (S.mode !== 'classic') renderJokers();
     renderRoom();
     renderBoss();
   }
 
   function renderSidebar() {
     const stageName = S.stage === 2 ? 'BOSS FIGHT' : `FLOOR ${S.stage + 1}`;
-    $('#floor-label').textContent = `ACT ${ROMAN[S.act] || S.act} · ${stageName}`;
+    $('#floor-label').textContent = S.mode === 'classic'
+      ? 'CLASSIC · THE DUNGEON'
+      : `ACT ${ROMAN[S.act] || S.act} · ${stageName}`;
+    document.querySelector('.gold-block').style.display = S.mode === 'classic' ? 'none' : '';
     const modEl = $('#floor-mod');
     if (S.floorMod) {
       const m = DATA.modById(S.floorMod);
@@ -758,8 +762,95 @@ const UI = (() => {
         <button class="btn" id="ab-yes">ABANDON</button>
         <button class="btn btn-ghost" id="ab-no">KEEP FIGHTING</button>
       </div>`);
-    $('#ab-yes').addEventListener('click', () => { SFX.play('click'); closeModal(); S.over = true; renderMenu(); showScreen('menu'); });
+    $('#ab-yes').addEventListener('click', () => { SFX.play('click'); closeModal(); S.over = true; E.clearSave(); renderMenu(); showScreen('menu'); });
     $('#ab-no').addEventListener('click', () => { SFX.play('click'); closeModal(); });
+  }
+
+  /* ============================ leaderboard & score submit ============================ */
+  const REPO = 'lewismconte/scoundrel';
+
+  function modalSubmitScore() {
+    const fsc = S.finalScore;
+    if (!fsc) return;
+    const saved = localStorage.getItem('scoundrel_initials') || '';
+    openModal(`
+      <h2>🏆 SUBMIT SCORE — ${fsc.score}</h2>
+      <p>Enter your arcade initials:</p>
+      <div style="text-align:center;margin:14px 0">
+        <input class="initials-input" id="initials" maxlength="3" value="${saved}" placeholder="AAA">
+      </div>
+      <p>Submitting opens <b>GitHub</b> with a pre-filled score report — sign in and press
+      <b>Submit new issue</b>. A bot verifies it and the board updates in a couple of minutes.
+      No account? Your score still counts on this device's local board.</p>
+      <div class="modal-foot">
+        <button class="btn btn-go" id="submit-go">OPEN GITHUB →</button>
+        <button class="btn btn-ghost" id="modal-close">CANCEL</button>
+      </div>`);
+    const inp = $('#initials');
+    inp.focus();
+    $('#submit-go').addEventListener('click', () => {
+      const name = (inp.value || 'AAA').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 3) || 'AAA';
+      localStorage.setItem('scoundrel_initials', name);
+      const entry = { name, score: fsc.score, mode: fsc.mode, detail: fsc.detail };
+      const body = 'Automated score submission for the SCOUNDREL leaderboard.\n' +
+        'Just press **Submit new issue** — a bot records it and closes this.\n\n' +
+        '```json\n' + JSON.stringify(entry) + '\n```\n';
+      const url = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(`[SCORE] ${name} ${fsc.score} (${fsc.mode})`)}&body=${encodeURIComponent(body)}`;
+      SFX.play('coin');
+      window.open(url, '_blank');
+      closeModal();
+    });
+    $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
+  }
+
+  function boardRows(list) {
+    if (!list || list.length === 0) return '<tr><td colspan="4" style="opacity:.5;padding:14px">no scores yet — be the first!</td></tr>';
+    return list.map((s, i) => `
+      <tr>
+        <td class="b-rank">${i + 1}</td>
+        <td class="b-name">${String(s.name || '???').slice(0, 3).toUpperCase()}</td>
+        <td><div class="b-detail">${s.detail || ''}${s.date ? ' · ' + s.date : ''}</div></td>
+        <td class="b-score">${s.score}</td>
+      </tr>`).join('');
+  }
+
+  function modalLeaderboard() {
+    openModal(`
+      <h2>🏆 LEADERBOARD</h2>
+      <div class="board-tabs">
+        <button class="btn on" id="tab-classic">CLASSIC</button>
+        <button class="btn" id="tab-gauntlet">GAUNTLET</button>
+      </div>
+      <div id="board-body"><p style="opacity:.6">fetching scores…</p></div>
+      <p class="board-note" id="board-note">Top 50 per mode. Scores are player-submitted via GitHub and honour-system — settle disputes with a duel.</p>
+      <div class="modal-foot"><button class="btn" id="modal-close">CLOSE</button></div>`);
+    $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
+
+    let board = null, tab = 'classic';
+    const render = () => {
+      const body = $('#board-body');
+      if (!body) return;
+      if (board) {
+        body.innerHTML = `<table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(board[tab])}</table>`;
+      } else {
+        const local = E.localScores().filter(s => s.mode === tab);
+        body.innerHTML = `<p style="opacity:.7;font-size:9px;margin-bottom:8px">⚠ couldn't reach the online board — showing this device's scores.</p>
+          <table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(local.map(s => ({ ...s, name: 'YOU' })))}</table>`;
+      }
+    };
+    const setTab = t => {
+      tab = t;
+      $('#tab-classic').classList.toggle('on', t === 'classic');
+      $('#tab-gauntlet').classList.toggle('on', t === 'gauntlet');
+      render();
+    };
+    $('#tab-classic').addEventListener('click', () => { SFX.play('click'); setTab('classic'); });
+    $('#tab-gauntlet').addEventListener('click', () => { SFX.play('click'); setTab('gauntlet'); });
+    fetch('leaderboard.json?t=' + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { board = j; render(); })
+      .catch(() => render());
+    render();
   }
 
   /* ============================ boss splash ============================ */
@@ -778,6 +869,10 @@ const UI = (() => {
 
   /* ============================ shop ============================ */
   function renderShop() {
+    const free = S.shop.freePicks > 0;
+    document.querySelector('#screen-shop .shop-head h2').textContent =
+      S.shop.outfitting ? (free ? '🎒 OUTFITTING — FIRST PICK IS FREE' : '🎒 OUTFITTING') : "🏕 THE SMUGGLER'S CAMP";
+    $('#btn-delve').textContent = S.shop.outfitting ? 'ENTER THE DUNGEON →' : 'DELVE DEEPER →';
     $('#shop-gold').textContent = S.gold;
     renderJokers($('#shop-jokerbar'), true);
 
@@ -796,11 +891,11 @@ const UI = (() => {
           : (it.card.kind === 'weapon' ? `Weapon, power ${it.card.rank}. Added to your dungeon deck.` : `Potion, heals ${it.card.rank}. Added to your dungeon deck.`);
         el.innerHTML += `<div class="si-desc">${d}</div>`;
       }
-      el.innerHTML += `<div class="price-tag">🪙 ${it.price}</div>`;
+      el.innerHTML += `<div class="price-tag">${free && !it.sold ? '★ FREE' : '🪙 ' + it.price}</div>`;
       const btn = document.createElement('button');
       btn.className = 'btn';
-      btn.textContent = it.sold ? 'SOLD' : 'BUY';
-      btn.disabled = it.sold || S.gold < it.price || (it.type === 'joker' && S.jokers.length >= S.jokerSlots);
+      btn.textContent = it.sold ? 'SOLD' : (free ? 'TAKE' : 'BUY');
+      btn.disabled = it.sold || (!free && S.gold < it.price) || (it.type === 'joker' && S.jokers.length >= S.jokerSlots);
       btn.addEventListener('click', () => playEvents(E.buyItem(i)));
       el.appendChild(btn);
       // re-attach tooltip for joker (innerHTML += nuked listeners)
@@ -833,6 +928,8 @@ const UI = (() => {
   function renderMenu() {
     const row = $('#campaign-row');
     row.innerHTML = '';
+    row.classList.add('hidden');
+    $('#mode-gauntlet').classList.remove('selected');
     DATA.CAMPAIGNS.forEach(c => {
       const el = document.createElement('div');
       el.className = 'campaign';
@@ -844,10 +941,34 @@ const UI = (() => {
       el.addEventListener('click', () => { SFX.unlock(); SFX.play('joker'); E.newRun(c.id); });
       row.appendChild(el);
     });
+    const save = E.savedRun();
+    const cont = $('#btn-continue');
+    cont.style.display = save ? '' : 'none';
+    if (save) {
+      cont.textContent = save.mode === 'classic'
+        ? `▶ CONTINUE — CLASSIC (${save.hp} HP)`
+        : `▶ CONTINUE — ACT ${ROMAN[save.act] || save.act} (${save.hp} HP)`;
+    }
     const m = E.loadMeta();
     $('#menu-stats').textContent = (m.runs || 0) > 0
       ? `runs ${m.runs || 0} · wins ${m.wins || 0} · deaths ${m.deaths || 0} · deepest floor ${m.bestFloor || 0}`
-      : 'no runs yet — pick a campaign';
+      : 'no runs yet — pick a mode';
+  }
+
+  /* restore a saved run onto the right screen */
+  function resumeRun() {
+    if (!E.resume()) { renderMenu(); return; }
+    if (S.pendingReward) {
+      showScreen('game');
+      renderAll(true);
+      modalBossReward(S.pendingReward);
+    } else if (S.shop) {
+      showScreen('shop');
+      renderShop();
+    } else {
+      showScreen('game');
+      renderAll(true);
+    }
   }
 
   function gameOver(victory) {
@@ -856,7 +977,17 @@ const UI = (() => {
     $('#over-title').textContent = victory ? 'ESCAPED!' : 'SLAIN';
     $('#over-sub').textContent = victory
       ? `${S.campaign.name} conquered — the scoundrel rides into legend`
-      : `${S.campaign.name} — dead on floor ${S.floorNum}, Act ${ROMAN[S.act] || S.act}`;
+      : S.mode === 'classic'
+        ? `Classic Run — the dungeon keeps its dead`
+        : `${S.campaign.name} — dead on floor ${S.floorNum}, Act ${ROMAN[S.act] || S.act}`;
+    const fsc = S.finalScore;
+    const best = E.localScores().filter(s => s.mode === fsc.mode)[0];
+    $('#over-score').innerHTML = `
+      <div class="score-panel">
+        <div class="s-label">SCORE — ${fsc.mode.toUpperCase()}</div>
+        <div class="s-value">${fsc.score}</div>
+        <div class="s-detail">${fsc.detail}${best ? ` · device best ${best.score}` : ''}</div>
+      </div>`;
     const st = S.stats;
     $('#over-stats').innerHTML = `
       <div><span>Monsters slain</span><span class="v">${st.kills}</span></div>
@@ -873,8 +1004,9 @@ const UI = (() => {
 
   return {
     showScreen, renderAll, renderSidebar, renderPiles, renderJokers, renderRoom, renderBoss, renderShop,
-    renderMenu, playEvents, floatAt, floatCenter, shake, hurtFlash, spawnBurst, particleLoop,
+    renderMenu, resumeRun, playEvents, floatAt, floatCenter, shake, hurtFlash, spawnBurst, particleLoop,
     openModal, closeModal, modalHowTo, modalDeckView, modalDiscardView, modalAbandon, modalBossReward,
+    modalLeaderboard, modalSubmitScore,
     bossSplash, gameOver, flyTo, fleeWithFlight,
     get busy() { return busy; },
   };

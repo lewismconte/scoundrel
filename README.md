@@ -1,8 +1,20 @@
-# SCOUNDREL — a knavish roguelike
+# SCOUNDREL — a dungeon crawling card game
 
-A roguelike deckbuilder built on top of **Scoundrel** (the 2011 solo card-crawl by Zach Gage
-& Kurt Bieg), wearing its best **Balatro** outfit. Zero build step, zero dependencies —
-double-click `index.html` and play.
+A dungeon crawling card game built on top of **Scoundrel** (the 2011 solo card-crawl by
+Zach Gage & Kurt Bieg), wearing its best **Balatro** outfit. Zero build step, zero
+dependencies — double-click `index.html` and play.
+
+**Two modes:**
+
+- **CLASSIC RUN** — the original game, faithfully: one 44-card dungeon, no shops, no
+  bosses, no mercy. Scored for the leaderboard, so everyone competes on the same deck.
+- **THE GAUNTLET** — the full ride: 3 acts × (2 floors + a boss), 23 Jokers, shops and
+  deckbuilding, all 54 cards. Starts at an outfitting camp where your first pick is free.
+
+**Arcade extras:** runs autosave to your device (continue any time), and there's a global
+**top-50 leaderboard per mode** — powered entirely by GitHub: submitting a score opens a
+pre-filled GitHub issue, a bot validates it, commits it to `leaderboard.json`, and Pages
+serves the updated board. No server, no database, no running costs.
 
 ## How to run
 

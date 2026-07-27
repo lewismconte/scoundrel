@@ -288,6 +288,21 @@ body {
 @keyframes title-pulse { 0%, 100% { transform: scale(1) rotate(-1deg); } 50% { transform: scale(1.03) rotate(1deg); } }
 .tagline { font-size: 12px; opacity: .75; margin-top: 16px; letter-spacing: 1px; }
 
+#mode-row { display: flex; gap: 26px; }
+.mode-card {
+  width: 280px; background: #142720;
+  border: 3px solid #35493f; border-radius: 0;
+  padding: 22px 18px; cursor: pointer; text-align: center;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, .35);
+  transition: transform .12s, border-color .12s, box-shadow .12s;
+}
+.mode-card:hover { transform: translateY(-8px); border-color: var(--gold); box-shadow: 8px 14px 0 rgba(0, 0, 0, .3); }
+.mode-card .mode-emoji { font-size: 46px; height: 56px; }
+.mode-card h3 { font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1; margin: 10px 0 8px; color: var(--gold); }
+.mode-card p { font-size: 9px; opacity: .85; line-height: 1.6; }
+.mode-card .camp-diff { margin-top: 12px; font-size: 8px; font-weight: 700; letter-spacing: 2px; opacity: .55; }
+.mode-card.selected { border-color: var(--gold); }
+
 #campaign-row { display: flex; gap: 22px; }
 .campaign {
   width: 224px; background: #142720;
@@ -556,6 +571,37 @@ body {
 .reward-row .joker { cursor: pointer; }
 .reward-row .joker:hover { outline: 3px solid var(--gold); transform: translateY(-6px) scale(1.05); }
 
+/* leaderboard */
+.board-tabs { display: flex; gap: 10px; margin-bottom: 12px; }
+.board-tabs .btn { font-size: 18px; padding: 5px 16px 3px; background: #3d5247; }
+.board-tabs .btn.on { background: var(--gold); color: #4a3406; }
+.board-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.board-table th { font-size: 8px; letter-spacing: 2px; opacity: .5; text-align: left; padding: 4px 8px; }
+.board-table td { padding: 5px 8px; border-top: 2px solid rgba(255, 255, 255, .08); }
+.board-table .b-rank { font-family: var(--font-display); font-size: 18px; color: var(--gold); width: 40px; }
+.board-table .b-name { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; }
+.board-table .b-score { font-family: var(--font-display); font-size: 18px; color: var(--gold); text-align: right; }
+.board-table .b-detail { opacity: .6; font-size: 8px; }
+.board-table tr:nth-child(1) .b-rank, .board-table tr:nth-child(1) .b-name { color: #ffe9a8; }
+.board-note { font-size: 8px; opacity: .5; margin-top: 12px; line-height: 1.7; }
+
+/* score panel on game over + initials input */
+.score-panel {
+  background: #142720; border: 3px solid var(--gold); border-radius: 0;
+  padding: 12px 26px; text-align: center;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, .35);
+}
+.score-panel .s-label { font-size: 8px; letter-spacing: 3px; opacity: .55; }
+.score-panel .s-value { font-family: var(--font-display); font-size: 58px; line-height: 1; color: var(--gold); text-shadow: 3px 3px 0 rgba(0, 0, 0, .5); }
+.score-panel .s-detail { font-size: 9px; opacity: .7; margin-top: 4px; }
+.initials-input {
+  font-family: var(--font-display); font-size: 44px; text-align: center; letter-spacing: 10px;
+  width: 160px; background: #0e1c15; color: var(--gold);
+  border: 3px solid var(--gold); border-radius: 0; padding: 4px 0 0;
+  text-transform: uppercase; outline: none;
+}
+.over-buttons { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
 #tooltip {
   position: fixed; z-index: 120; pointer-events: none;
   background: #14100d; color: var(--paper);
@@ -670,6 +716,8 @@ body {
 
   /* --- menu --- */
   .game-title { font-size: 56px; letter-spacing: 2px; }
+  #mode-row { flex-direction: column; gap: 14px; }
+  .mode-card { width: 264px; padding: 16px 14px; }
   #campaign-row { flex-direction: column; }
   .campaign { width: 260px; }
 
