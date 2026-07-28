@@ -44,6 +44,7 @@ const E = (() => {
   const SAVE_VER = 2;
   function saveNow() {
     if (S.over || !S.mode) return;
+    flushTime(); // bank the clock before it is written out
     try { localStorage.setItem('scoundrel_save', JSON.stringify({ ...S, v: SAVE_VER })); } catch (e) {}
   }
   function clearSave() { try { localStorage.removeItem('scoundrel_save'); } catch (e) {} }
@@ -64,6 +65,11 @@ const E = (() => {
     DATA.ensureIdAbove(maxId);
     Object.assign(S, d);
     delete S.v; // the version tag lives in storage, not in run state
+    // The clock counts time at the table, not time the tab was shut. Saves made
+    // before the clock existed have no elapsedMs — start them from zero rather
+    // than inheriting the previous run's total off the reused S object.
+    S.elapsedMs = Number(d.elapsedMs) || 0;
+    S.startedAt = Date.now();
     runToken++; // stale timers from a previous run must not fire into this one
     return true;
   }
@@ -72,6 +78,23 @@ const E = (() => {
      live when it was queued. Bumped on every run start/resume so a timer that
      outlives its run can detect that and bail instead of mutating the new one. */
   let runToken = 0;
+
+  /* ---------- the run clock ----------
+     Wall-clock time at the table. It never pauses for the camp, for modals or
+     for reading a Joker — deliberating is part of the run. What it does not
+     count is time the tab was closed: elapsedMs banks everything up to the last
+     save, startedAt marks when the current visit began, and resume() restarts
+     that marker. Otherwise a run picked up the next morning would read 14 hours. */
+  function flushTime() {
+    const now = Date.now();
+    S.elapsedMs = (S.elapsedMs || 0) + Math.max(0, now - (S.startedAt || now));
+    S.startedAt = now;
+  }
+  function runMs() {
+    if (!S.mode) return 0;
+    if (S.over) return S.elapsedMs || 0; // frozen at the moment the run ended
+    return (S.elapsedMs || 0) + Math.max(0, Date.now() - (S.startedAt || Date.now()));
+  }
 
   /* ---------- arcade scoring ---------- */
   function computeScore(won) {
@@ -86,13 +109,18 @@ const E = (() => {
     return { score: s, detail: `Act ${S.act} - ${st.bosses} boss${st.bosses === 1 ? '' : 'es'} - ${st.kills} slain` };
   }
   function finishRun(won) {
+    flushTime(); // stop the clock before anything reads it
     const fs = computeScore(won);
-    S.finalScore = { ...fs, mode: S.mode, won };
+    const timeSec = Math.round((S.elapsedMs || 0) / 1000);
+    S.finalScore = { ...fs, mode: S.mode, won, time: timeSec };
     clearSave();
     try {
       const key = 'scoundrel_local_scores';
       const list = JSON.parse(localStorage.getItem(key) || '[]');
-      list.push({ score: fs.score, mode: S.mode, detail: fs.detail, date: new Date().toISOString().slice(0, 10) });
+      list.push({
+        score: fs.score, mode: S.mode, detail: fs.detail, time: timeSec, won,
+        date: new Date().toISOString().slice(0, 10),
+      });
       list.sort((a, b) => b.score - a.score);
       localStorage.setItem(key, JSON.stringify(list.slice(0, 10)));
     } catch (e) {}
@@ -179,6 +207,7 @@ const E = (() => {
       boss: null, actionsLeft: 0, bossDeck: [], bossDiscard: [],
       shop: null, pendingReward: null,
       stats: { kills: 0, bareKills: 0, dmgTaken: 0, healed: 0, goldEarned: 0, floors: 0, bosses: 0, fled: 0 },
+      elapsedMs: 0, startedAt: Date.now(),
       over: false, finalScore: null,
     });
     saveMeta({ runs: (loadMeta().runs || 0) + 1 });
@@ -202,6 +231,7 @@ const E = (() => {
       boss: null, actionsLeft: 0, bossDeck: [], bossDiscard: [],
       shop: null, pendingReward: null,
       stats: { kills: 0, bareKills: 0, dmgTaken: 0, healed: 0, goldEarned: 0, floors: 0, bosses: 0, fled: 0 },
+      elapsedMs: 0, startedAt: Date.now(),
       over: false, finalScore: null,
     });
     saveMeta({ runs: (loadMeta().runs || 0) + 1 });
@@ -707,7 +737,7 @@ const E = (() => {
     openShop, buyItem, buyHeal, rerollShop, removeCardFromPool, sellJoker, leaveShop,
     hasJoker, effRank, weaponPower, canUseWeapon, previewDamage, potionHeal,
     strikeDamage, canFlee, roomSize, monsterBonus,
-    HEAL_COST, runToken: () => runToken,
+    HEAL_COST, runToken: () => runToken, runMs,
     drain, loadMeta,
     savedRun, resume, clearSave, localScores,
   };

@@ -13,6 +13,23 @@ const UI = (() => {
   let knownIds = new Set();  // room cards already on the table (for deal anims)
   let tipEl = null, tipTimer = 0;
 
+  /* ============================ the run clock ============================ */
+  /* M:SS, rolling over to H:MM:SS only when a run really does run long. */
+  function fmtTime(sec) {
+    if (sec == null || !isFinite(sec)) return '-';
+    const t = Math.max(0, Math.floor(sec));
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    const pad = n => String(n).padStart(2, '0');
+    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+  }
+  /* Ticks on its own: renderSidebar only runs on state changes, and the clock
+     has to move between them. */
+  setInterval(() => {
+    const el = $('#run-clock');
+    if (!el || !S.mode || S.over) return;
+    el.textContent = fmtTime(E.runMs() / 1000);
+  }, 500);
+
   /* ============================ screens ============================ */
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
@@ -160,6 +177,7 @@ const UI = (() => {
       modEl.classList.add('on');
     } else modEl.classList.remove('on');
 
+    $('#run-clock').textContent = fmtTime(E.runMs() / 1000);
     $('#hp-num').textContent = S.hp;
     $('#hp-max').textContent = '/' + S.maxHp;
     $('#hp-orb').classList.toggle('low', S.hp <= 5 && !S.over);
@@ -825,7 +843,9 @@ const UI = (() => {
     $('#submit-go').addEventListener('click', () => {
       const name = initials();
       localStorage.setItem('scoundrel_initials', name);
-      const entry = { name, score: fsc.score, mode: fsc.mode, detail: fsc.detail };
+      // `won` rides along so the board can rank by time honestly — a run that
+      // ended in death is quick for the wrong reason.
+      const entry = { name, score: fsc.score, mode: fsc.mode, detail: fsc.detail, time: fsc.time, won: !!fsc.won };
 
       if (!online) { // legacy path: hand the entry to the GitHub issue bot
         const body = 'Automated score submission for the SCOUNDREL leaderboard.\n' +
@@ -872,15 +892,35 @@ const UI = (() => {
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
   }
 
-  function boardRows(list) {
-    if (!list || list.length === 0) return '<tr><td colspan="4" style="opacity:.5;padding:14px">no scores yet - be the first!</td></tr>';
-    return list.map((s, i) => `
-      <tr>
+  /* Ranking by time is only meaningful among runs that were actually finished:
+     dying on the first room is the fastest way to the bottom of the dungeon.
+     Completed runs rank first, fastest to slowest; everything else follows,
+     still ordered by time but never able to top the board. Entries submitted
+     before the clock existed have no time and sort last of all. */
+  function sortBoard(list, by) {
+    const rows = (list || []).slice();
+    if (by !== 'time') return rows.sort((a, b) => b.score - a.score);
+    const t = e => (typeof e.time === 'number' && e.time > 0 ? e.time : Infinity);
+    return rows.sort((a, b) => {
+      const aRanked = a.won && isFinite(t(a)), bRanked = b.won && isFinite(t(b));
+      if (aRanked !== bRanked) return aRanked ? -1 : 1;
+      return t(a) - t(b);
+    });
+  }
+
+  function boardRows(list, by) {
+    if (!list || list.length === 0) return '<tr><td colspan="5" style="opacity:.5;padding:14px">no scores yet - be the first!</td></tr>';
+    return list.map((s, i) => {
+      const ranked = by !== 'time' || (s.won && typeof s.time === 'number' && s.time > 0);
+      return `
+      <tr${ranked ? '' : ' class="b-unranked"'}>
         <td class="b-rank">${i + 1}</td>
         <td class="b-name">${esc(String(s.name || '???').slice(0, 3).toUpperCase())}</td>
         <td><div class="b-detail">${esc(s.detail)}${s.date ? ' - ' + esc(s.date) : ''}</div></td>
+        <td class="b-time">${typeof s.time === 'number' && s.time > 0 ? esc(fmtTime(s.time)) : '-'}</td>
         <td class="b-score">${esc(s.score)}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
 
   function modalLeaderboard() {
@@ -895,17 +935,35 @@ const UI = (() => {
       <div class="modal-foot"><button class="btn" id="modal-close">CLOSE</button></div>`);
     $('#modal-close').addEventListener('click', () => { SFX.play('click'); closeModal(); });
 
-    let board = null, tab = 'classic';
+    let board = null, tab = 'classic', by = 'score';
+    const head = () => `<tr>
+      <th>#</th><th>WHO</th><th></th>
+      <th class="b-sort${by === 'time' ? ' on' : ''}" id="sort-time">TIME${by === 'time' ? ' ▲' : ''}</th>
+      <th class="b-sort${by === 'score' ? ' on' : ''}" id="sort-score" style="text-align:right">SCORE${by === 'score' ? ' ▼' : ''}</th>
+    </tr>`;
     const render = () => {
       const body = $('#board-body');
       if (!body) return;
       if (board) {
-        body.innerHTML = `<table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(board[tab])}</table>`;
+        body.innerHTML = `<table class="board-table">${head()}${boardRows(sortBoard(board[tab], by), by)}</table>`;
       } else {
-        const local = E.localScores().filter(s => s.mode === tab);
+        const local = E.localScores().filter(s => s.mode === tab).map(s => ({ ...s, name: 'YOU' }));
         body.innerHTML = `<p style="opacity:.7;font-size:9px;margin-bottom:8px">couldn't reach the online board - showing this device's scores.</p>
-          <table class="board-table"><tr><th>#</th><th>WHO</th><th></th><th style="text-align:right">SCORE</th></tr>${boardRows(local.map(s => ({ ...s, name: 'YOU' })))}</table>`;
+          <table class="board-table">${head()}${boardRows(sortBoard(local, by), by)}</table>`;
       }
+      const note = $('#board-note');
+      if (note) {
+        note.textContent = by === 'time'
+          ? 'Fastest completed runs first - a run that ended in death ranks below, however quick it was.'
+          : 'Top 50 per mode. Scores are player-submitted and honour-system - settle disputes with a duel.';
+      }
+      // the header is rebuilt every render, so the handlers go back on each time
+      const bind = (id, mode) => {
+        const el = $('#' + id);
+        if (el) el.addEventListener('click', () => { SFX.play('click'); by = mode; render(); });
+      };
+      bind('sort-time', 'time');
+      bind('sort-score', 'score');
     };
     const setTab = t => {
       tab = t;
@@ -1072,9 +1130,11 @@ const UI = (() => {
         <div class="s-label">SCORE - ${fsc.mode.toUpperCase()}</div>
         <div class="s-value">${fsc.score}</div>
         <div class="s-detail">${fsc.detail}${best ? ` - device best ${best.score}` : ''}</div>
+        <div class="s-time">TIME ${fmtTime(fsc.time)}</div>
       </div>`;
     const st = S.stats;
     $('#over-stats').innerHTML = `
+      <div><span>Run time</span><span class="v">${fmtTime(fsc.time)}</span></div>
       <div><span>Monsters slain</span><span class="v">${st.kills}</span></div>
       <div><span>Barehanded kills</span><span class="v">${st.bareKills}</span></div>
       <div><span>Damage taken</span><span class="v">${st.dmgTaken}</span></div>

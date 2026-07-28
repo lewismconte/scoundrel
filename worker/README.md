@@ -44,10 +44,19 @@ and the game falls back to the old GitHub-issue flow instead, so nothing breaks.
 
 ## Endpoints
 
-| Method | Path     | Purpose                                        |
-| ------ | -------- | ---------------------------------------------- |
-| `GET`  | `/board` | `{ classic: [...], gauntlet: [...] }`          |
-| `POST` | `/score` | body `{name, score, mode, detail}` → `{ok, rank}` |
+| Method | Path     | Purpose                                                     |
+| ------ | -------- | ----------------------------------------------------------- |
+| `GET`  | `/board` | `{ classic: [...], gauntlet: [...] }`                        |
+| `POST` | `/score` | body `{name, score, mode, detail, time, won}` → `{ok, rank}` |
+
+`time` is the run in whole seconds and `won` says whether it was completed.
+Both are optional — entries submitted before the clock existed simply have
+`time: null`, and the board renders them with a dash.
+
+Stored order is always score-descending, so which 50 entries survive does not
+depend on the clock. Ranking by time is a view the game applies over the same
+entries, and it only ranks runs where `won` is true: dying in the first room is
+the fastest way to the bottom of the dungeon, and it should not top a board.
 
 ## What it rejects
 
@@ -55,6 +64,11 @@ Initials are forced to `[A-Z0-9]{1,3}` and detail lines to a punctuation-free
 charset, so neither can carry markup into the page. Scores must be integers
 within a per-mode ceiling (well above a perfect run — the point is to reject
 `1e30`, not to police skill), and each IP is capped at 20 submissions/hour.
+
+Times outside 1s–24h are stored as `null` rather than clamped: an out-of-range
+value means the client is broken or lying, and a silently clamped `0` would sit
+at the top of the time board forever. `won` must be a real boolean, so a truthy
+`"yes"` cannot fake a completed run.
 
 It cannot stop a determined person from POSTing a plausible score directly:
 the score is computed on the player's own machine, so no free design can. The

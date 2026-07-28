@@ -334,6 +334,13 @@ body {
 .side-label { font-size: 8px; font-weight: 700; letter-spacing: 3px; opacity: .5; margin-bottom: 6px; }
 
 .floor-label { font-family: var(--font-display); font-size: 24px; line-height: 1; letter-spacing: 1px; color: var(--gold); }
+/* the run clock — quiet by default, it is a stat and not a countdown */
+.run-clock {
+  margin-top: 5px;
+  font-family: var(--font-display); font-size: 19px; line-height: 1;
+  letter-spacing: 1px; color: var(--paper); opacity: .55;
+  font-variant-numeric: tabular-nums;
+}
 .floor-mod {
   margin-top: 8px; font-size: 8px; line-height: 1.4; color: #c9b3f5;
   background: #241b38; border: 2px solid var(--purple);
@@ -577,6 +584,19 @@ body {
 .board-table .b-name { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; }
 .board-table .b-score { font-family: var(--font-display); font-size: 18px; color: var(--gold); text-align: right; }
 .board-table .b-detail { opacity: .6; font-size: 8px; }
+.board-table .b-time {
+  font-family: var(--font-display); font-size: 16px; color: var(--paper);
+  opacity: .8; text-align: right; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* sortable headers — the active one is gold and carries the arrow */
+.board-table th.b-sort { cursor: pointer; opacity: .6; }
+.board-table th.b-sort:hover { opacity: .9; }
+.board-table th.b-sort.on { opacity: 1; color: var(--gold); }
+.board-table th#sort-time { text-align: right; }
+/* ranked-by-time, but the run ended in death — visibly out of the running */
+.board-table tr.b-unranked .b-rank,
+.board-table tr.b-unranked .b-time { opacity: .35; }
 .board-table tr:nth-child(1) .b-rank, .board-table tr:nth-child(1) .b-name { color: #ffe9a8; }
 .board-note { font-size: 8px; opacity: .5; margin-top: 12px; line-height: 1.7; }
 
@@ -589,6 +609,11 @@ body {
 .score-panel .s-label { font-size: 8px; letter-spacing: 3px; opacity: .55; }
 .score-panel .s-value { font-family: var(--font-display); font-size: 58px; line-height: 1; color: var(--gold); text-shadow: 3px 3px 0 rgba(0, 0, 0, .5); }
 .score-panel .s-detail { font-size: 9px; opacity: .7; margin-top: 4px; }
+.score-panel .s-time {
+  font-family: var(--font-display); font-size: 20px; letter-spacing: 2px;
+  color: var(--paper); opacity: .75; margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
 .initials-input {
   font-family: var(--font-display); font-size: 44px; text-align: center; letter-spacing: 10px;
   width: 160px; background: #0e1c15; color: var(--gold);
@@ -665,6 +690,7 @@ body {
   .side-block { width: auto; }
   .side-label { display: none; }
   .floor-label { font-size: 17px; }
+  .run-clock { font-size: 13px; margin-top: 2px; }   /* own line under the floor label */
   .floor-mod { display: none !important; }         /* too long for the bar — shown in room banner */
   .hp-block { gap: 7px; }
   .hp-orb { min-width: 0; padding: 4px 10px 3px; gap: 5px; box-shadow: 0 3px 0 #2a070a, inset -2px -2px 0 rgba(0, 0, 0, .3); }

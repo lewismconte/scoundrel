@@ -73,6 +73,16 @@ function cleanDetail(raw) {
     .slice(0, 60);
 }
 
+// Run time in whole seconds. Rejected outright rather than clamped: a value
+// outside this range means the client is broken or lying, and a silently
+// clamped 0 would sit at the top of the time board forever. Null is fine —
+// entries from before the clock existed simply have no time.
+const MAX_TIME = 24 * 3600;
+function cleanTime(raw) {
+  const t = Math.round(Number(raw));
+  return Number.isFinite(t) && t > 0 && t <= MAX_TIME ? t : null;
+}
+
 const BLOCKED = ['ASS', 'FUK', 'FUC', 'CUM', 'JEW', 'NIG', 'FAG', 'TIT', 'SEX', 'GAY', 'KKK', 'DIE'];
 
 function readBoard(env) {
@@ -116,9 +126,13 @@ async function handleScore(request, env, origin) {
     name,
     score,
     detail: cleanDetail(body.detail),
+    time: cleanTime(body.time),
+    won: body.won === true,
     date: new Date().toISOString().slice(0, 10),
   };
 
+  // Canonical order stays score-descending, so which 50 survive does not change.
+  // Ranking by time is a view the client applies over these same entries.
   board[mode] = board[mode]
     .concat([entry])
     .sort((a, b) => b.score - a.score)

@@ -60,6 +60,13 @@ Runs autosave to your device, so you can close the tab and come back. Finish one
 can put it on a global **top-50 board per mode** — type three initials, and your rank comes
 straight back. No account, no login, no waiting.
 
+Every run is also **timed**, and the board sorts by it: click the **TIME** column to flip
+from high score to fastest run. The clock never pauses — deliberating in the camp is part
+of your time — but it does stop while the tab is closed, so a run picked up the next
+morning doesn't read fourteen hours. Only completed runs rank by time; dying in the first
+room is quick for the wrong reason, and those entries sit below the finishers however fast
+they were.
+
 <p align="center">
   <img src="screenshots/board.png" width="700" alt="The in-game leaderboard">
 </p>
