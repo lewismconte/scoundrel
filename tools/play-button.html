@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- The README's play button, rendered to screenshots/play.png by screenshots.mjs.
+     Only the button is baked into the PNG — the strapline stays as markdown so it
+     picks up GitHub's light/dark theme. Pale text burned into a transparent image
+     is invisible on a light background. -->
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #24242e; --gold: #f5b942; --gold-dark: #b97f16; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; }
+  body {
+    width: 520px; height: 118px;
+    display: flex; align-items: center; justify-content: center;
+    image-rendering: pixelated;
+  }
+  .btn {
+    font-family: 'Jersey 10', monospace;
+    font-size: 46px; line-height: 1; letter-spacing: 2px;
+    color: var(--ink); background: var(--gold);
+    border: 4px solid var(--ink);
+    padding: 14px 40px 10px;
+    box-shadow: 0 7px 0 var(--gold-dark), 0 7px 0 4px var(--ink);
+    text-transform: uppercase;
+  }
+</style>
+<div class="btn">&#9654; Play Now</div>

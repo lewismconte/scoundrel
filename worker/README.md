@@ -38,8 +38,9 @@ this game will ever see. No credit card required.
 5. Put that URL into `BOARD_API` at the top of the leaderboard section in
    `../js/ui.js`, then commit and push.
 
-Until `BOARD_API` is filled in, the game automatically falls back to the old
-GitHub-issue flow, so nothing breaks in the meantime.
+This repo's copy already points at a deployed Worker. The steps above are for
+running your own — fork the game, deploy, and swap `BOARD_API`. Leave it empty
+and the game falls back to the old GitHub-issue flow instead, so nothing breaks.
 
 ## Endpoints
 
